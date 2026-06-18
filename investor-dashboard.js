@@ -1,6 +1,6 @@
 /**
  * StepUp for AI - Investor Dashboard
- * Main Script - Mock Data & Panel Logic
+ * Main Script - Mock Data, Filtering, Profile & Contact Panels
  */
 
 // ==========================================================================
@@ -180,6 +180,10 @@ const STARTUP_DATA = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Load student-submitted pitches from localStorage and combine with static startup data
+  const studentPitches = JSON.parse(localStorage.getItem('stepup_student_pitches')) || [];
+  const ALL_PITCHES = [...studentPitches, ...STARTUP_DATA];
+
   // Navigation & Shell Elements
   const navItems = document.querySelectorAll('.nav-item');
   const panels = document.querySelectorAll('.dashboard-panel');
@@ -219,12 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const emptyStateReset = document.getElementById('emptyStateReset');
   const pitchGrid = document.getElementById('pitchGrid');
 
-  // Format Helper for Currency (e.g. 1500000 -> $1.5M or $500K)
+  // Format Helper for Currency (Indian Rupees: Lakhs/Crores)
   function formatAskAmount(amount) {
-    if (amount >= 1000000) {
-      return `$${(amount / 1000000).toFixed(1).replace('.0', '')}M`;
+    if (amount >= 10000000) {
+      return `₹${(amount / 10000000).toFixed(2).replace('.00', '').replace(/(\.[0-9])0$/, '$1')} Cr`;
+    } else if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(2).replace('.00', '').replace(/(\.[0-9])0$/, '$1')} L`;
     }
-    return `$${(amount / 1000).toFixed(0)}K`;
+    return `₹${amount.toLocaleString('en-IN')}`;
   }
 
   // Calculate if submitted within the last 7 days (reference: 2026-06-18)
@@ -238,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Apply filtering and sorting logic
   function applyFiltersAndSort() {
-    let filtered = [...STARTUP_DATA];
+    let filtered = [...ALL_PITCHES];
 
     // 1. Text Search Filter (Startup Name or Tagline)
     if (filterState.search) {
@@ -281,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pitchGrid) pitchGrid.style.display = 'none';
       if (emptyState) emptyState.style.display = 'flex';
     } else {
-      if (pitchGrid) pitchGrid.style.display = 'grid';
+      if (pitchGrid) pitchGrid.style.display = 'flex'; // Flex stack for horizontal list
       if (emptyState) emptyState.style.display = 'none';
       renderPitches(filtered);
     }
@@ -336,8 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (emptyStateReset) emptyStateReset.addEventListener('click', clearAllFilters);
   }
 
-  // Render Pitches Card Grid
-  function renderPitches(dataToRender = STARTUP_DATA) {
+  // Render Pitches Horizontal Card List
+  function renderPitches(dataToRender = ALL_PITCHES) {
     if (!pitchGrid) return;
 
     pitchGrid.innerHTML = '';
@@ -355,44 +361,44 @@ document.addEventListener('DOMContentLoaded', () => {
       if (startup.status === 'Shortlisted') badgeClass = 'shortlisted';
 
       card.innerHTML = `
-        <div class="card-header">
-          <div class="brand-info">
-            <div class="card-avatar" style="background: ${startup.logoBg}; color: #ffffff;">
-              ${startup.logoText}
-            </div>
-            <div class="brand-details">
-              <h3>${startup.name}</h3>
-              <span class="founder-name">by ${startup.founder}</span>
-            </div>
+        <div class="card-main-info">
+          <div class="card-title-row">
+            <h3>${startup.name}</h3>
+            <span class="status-badge ${badgeClass}">${startup.status}</span>
           </div>
-          <span class="status-badge ${badgeClass}">${startup.status}</span>
-        </div>
-
-        <p class="card-tagline">${startup.tagline}</p>
-
-        <div class="card-tags">
-          <span class="tag">${startup.sectorLabel}</span>
-          <span class="tag">${startup.stage}</span>
-        </div>
-
-        <div class="card-metrics">
-          <div>
-            <div class="metric-label">Funding Ask</div>
-            <div class="metric-value">${formatAskAmount(startup.ask)}</div>
+          <p class="card-tagline">${startup.tagline}</p>
+          <div class="card-tags">
+            <span class="tag">${startup.sectorLabel}</span>
+            <span class="tag">${startup.stage}</span>
           </div>
         </div>
 
-        <div class="card-footer">
+        <div class="card-metrics-col">
+          <div class="metric-label">Funding Ask</div>
+          <div class="metric-value">${formatAskAmount(startup.ask)}</div>
           <span class="submission-date">Submitted: ${startup.submittedDate}</span>
-          <div class="card-actions">
+        </div>
+
+        <div class="card-actions-col">
+          <div class="card-checkboxes">
+            <label class="custom-checkbox">
+              <input type="checkbox" class="cb-view-pitch" data-id="${startup.id}" aria-label="Check to view full pitch details">
+              <span class="checkbox-box"><i class="fa-solid fa-check"></i></span>
+              <span class="checkbox-label">View Pitch</span>
+            </label>
+            <label class="custom-checkbox">
+              <input type="checkbox" class="cb-view-contact" data-id="${startup.id}" aria-label="Check to view owner contact details">
+              <span class="checkbox-box"><i class="fa-solid fa-check"></i></span>
+              <span class="checkbox-label">Contact Details</span>
+            </label>
+          </div>
+          
+          <div class="card-footer-actions">
             <button class="bookmark-btn ${isShortlisted ? 'active' : ''}" 
                     data-id="${startup.id}" 
                     aria-label="${isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}"
                     title="${isShortlisted ? 'Remove from Shortlist' : 'Add to Shortlist'}">
               <i class="fa-${isShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
-            </button>
-            <button class="btn-view-pitch" data-id="${startup.id}">
-              View Pitch
             </button>
           </div>
         </div>
@@ -404,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bindCardActions();
   }
 
-  // Event handler bindings for cards (bookmark toggle & view pitch button)
+  // Event handler bindings for cards (bookmark toggle & view pitch/contact checkboxes)
   function bindCardActions() {
     const bookmarkBtns = document.querySelectorAll('.bookmark-btn');
     bookmarkBtns.forEach(btn => {
@@ -415,12 +421,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    const viewPitchBtns = document.querySelectorAll('.btn-view-pitch');
-    viewPitchBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const startupId = btn.dataset.id;
-        openModal(startupId, btn);
+    // Checkbox triggers View Pitch
+    const cbViewPitches = document.querySelectorAll('.cb-view-pitch');
+    cbViewPitches.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const startupId = cb.dataset.id;
+        if (cb.checked) {
+          // Uncheck other checkboxes in the list to avoid overlapping UI state
+          document.querySelectorAll('.cb-view-pitch, .cb-view-contact').forEach(otherCb => {
+            if (otherCb !== cb) otherCb.checked = false;
+          });
+          openModal(startupId, cb, 'pitch');
+        } else {
+          closeModal();
+        }
+      });
+    });
+
+    // Checkbox triggers Contact Details
+    const cbViewContacts = document.querySelectorAll('.cb-view-contact');
+    cbViewContacts.forEach(cb => {
+      cb.addEventListener('change', () => {
+        const startupId = cb.dataset.id;
+        if (cb.checked) {
+          document.querySelectorAll('.cb-view-pitch, .cb-view-contact').forEach(otherCb => {
+            if (otherCb !== cb) otherCb.checked = false;
+          });
+          openModal(startupId, cb, 'contact');
+        } else {
+          closeModal();
+        }
       });
     });
   }
@@ -431,8 +461,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalContent = document.getElementById('modalContent');
   let previouslyFocusedElement = null;
 
-  function openModal(id, triggerElement) {
-    const startup = STARTUP_DATA.find(s => s.id === id);
+  function openModal(id, triggerElement, mode = 'pitch') {
+    const startup = ALL_PITCHES.find(s => s.id === id);
     if (!startup) return;
 
     previouslyFocusedElement = triggerElement;
@@ -442,85 +472,128 @@ document.addEventListener('DOMContentLoaded', () => {
     if (startup.status === 'Under Review') badgeClass = 'review';
     if (startup.status === 'Shortlisted') badgeClass = 'shortlisted';
 
-    modalContent.innerHTML = `
-      <div class="modal-header-section">
-        <div class="modal-brand">
-          <div class="modal-avatar" style="background: ${startup.logoBg}; color: #ffffff;">
-            ${startup.logoText}
-          </div>
-          <div class="modal-title">
-            <h2>${startup.name}</h2>
-            <div class="modal-meta-tags">
-              <span class="tag">${startup.sectorLabel}</span>
-              <span class="tag">${startup.stage}</span>
-              <span class="status-badge ${badgeClass}">${startup.status}</span>
+    if (mode === 'pitch') {
+      // Injects detailed Pitch View content
+      modalContent.innerHTML = `
+        <div class="modal-header-section">
+          <div class="modal-brand">
+            <div class="modal-title">
+              <h2>${startup.name}</h2>
+              <div class="modal-meta-tags">
+                <span class="tag">${startup.sectorLabel}</span>
+                <span class="tag">${startup.stage}</span>
+                <span class="status-badge ${badgeClass}">${startup.status}</span>
+              </div>
+              <p class="modal-tagline">${startup.tagline}</p>
             </div>
-            <p class="modal-tagline">${startup.tagline}</p>
           </div>
         </div>
-      </div>
 
-      <div class="modal-body-section">
-        <h3 class="modal-section-title">Startup Pitch</h3>
-        <p class="modal-description">${startup.description}</p>
-      </div>
-
-      <div class="modal-metrics-section">
-        <div class="modal-metric-card">
-          <h4>Funding Ask</h4>
-          <p class="accent-val">${formatAskAmount(startup.ask)}</p>
+        <div class="modal-body-section">
+          <h3 class="modal-section-title">Startup Pitch</h3>
+          <p class="modal-description">${startup.description}</p>
         </div>
-        <div class="modal-metric-card">
-          <h4>Submitted Date</h4>
-          <p>${startup.submittedDate}</p>
-        </div>
-      </div>
 
-      <div class="modal-founder-section">
-        <h3 class="modal-section-title">Founder Contact</h3>
-        <div class="founder-profile">
-          <div class="founder-info">
-            <h4>${startup.founder}</h4>
-            <p>Founder & CEO, ${startup.name}</p>
+        <div class="modal-metrics-section">
+          <div class="modal-metric-card">
+            <h4>Funding Ask</h4>
+            <p class="accent-val">${formatAskAmount(startup.ask)}</p>
           </div>
-          <div class="founder-contact-links">
-            <a href="mailto:${startup.email}" class="founder-btn" title="Email founder">
-              <i class="fa-solid fa-envelope"></i>
-              <span>Email</span>
-            </a>
-            <a href="${startup.linkedin}" target="_blank" class="founder-btn linkedin-btn" title="Founder LinkedIn">
-              <i class="fa-brands fa-linkedin"></i>
-              <span>LinkedIn</span>
-            </a>
+          <div class="modal-metric-card">
+            <h4>Submitted Date</h4>
+            <p>${startup.submittedDate}</p>
           </div>
         </div>
-      </div>
 
-      <div class="modal-footer-section">
-        <button class="btn btn-secondary modal-bookmark-btn" id="modalBookmarkBtn" data-id="${startup.id}">
-          <i class="fa-${isShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
-          <span>${isShortlisted ? 'Shortlisted' : 'Shortlist Pitch'}</span>
-        </button>
-        <button class="btn-meeting-request" id="btnRequestMeeting">
-          <i class="fa-solid fa-calendar-check"></i>
-          <span>Request a Meeting</span>
-        </button>
-      </div>
-    `;
+        <div class="modal-founder-section">
+          <h3 class="modal-section-title">Founder Contact Summary</h3>
+          <div class="founder-profile">
+            <div class="founder-info">
+              <h4>${startup.founder}</h4>
+              <p>Founder & CEO, ${startup.name}</p>
+            </div>
+            <div class="founder-contact-links">
+              <a href="mailto:${startup.email}" class="founder-btn" title="Email founder">
+                <i class="fa-solid fa-envelope"></i>
+                <span>Email</span>
+              </a>
+              <a href="${startup.linkedin}" target="_blank" class="founder-btn linkedin-btn" title="Founder LinkedIn">
+                <i class="fa-brands fa-linkedin"></i>
+                <span>LinkedIn</span>
+              </a>
+            </div>
+          </div>
+        </div>
 
-    // Bind inner modal event listeners
-    const modalBookmarkBtn = document.getElementById('modalBookmarkBtn');
-    if (modalBookmarkBtn) {
-      modalBookmarkBtn.addEventListener('click', () => {
-        toggleShortlist(startup.id);
-        const updatedShortlisted = shortlistedIds.includes(startup.id);
-        modalBookmarkBtn.innerHTML = `
-          <i class="fa-${updatedShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
-          <span>${updatedShortlisted ? 'Shortlisted' : 'Shortlist Pitch'}</span>
-        `;
-      });
+        <div class="modal-footer-section">
+          <button class="btn btn-secondary modal-bookmark-btn" id="modalBookmarkBtn" data-id="${startup.id}">
+            <i class="fa-${isShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
+            <span>${isShortlisted ? 'Shortlisted' : 'Shortlist Pitch'}</span>
+          </button>
+        </div>
+      `;
+    } else {
+      // Injects focused Founder/Owner Contact details content
+      modalContent.innerHTML = `
+        <div class="modal-header-section">
+          <div class="modal-brand">
+            <div class="modal-title">
+              <h2>${startup.name} Contact Details</h2>
+              <div class="modal-meta-tags">
+                <span class="tag">${startup.sectorLabel}</span>
+                <span class="tag">${startup.stage}</span>
+              </div>
+              <p class="modal-tagline">Connect directly with the pitch owner</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-founder-section" style="background: rgba(47, 191, 100, 0.05); border-color: rgba(47, 191, 100, 0.17); margin-top: 10px;">
+          <h3 class="modal-section-title">Pitch Owner / Founder</h3>
+          <div class="founder-profile" style="flex-direction: column; align-items: flex-start; gap: 16px;">
+            <div class="founder-info">
+              <h4>${startup.founder}</h4>
+              <p>Founder & CEO, ${startup.name}</p>
+            </div>
+            
+            <div class="contact-details-list" style="width: 100%; margin-top: 10px; display: flex; flex-direction: column; gap: 12px;">
+              <div class="contact-detail-item" style="display: flex; align-items: center; gap: 14px;">
+                <div class="detail-icon" style="width: 38px; height: 38px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--accent);"><i class="fa-solid fa-envelope"></i></div>
+                <div class="detail-info" style="display: flex; flex-direction: column; flex: 1;">
+                  <span class="detail-label" style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Direct Email Address</span>
+                  <span class="detail-val" style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600;"><a href="mailto:${startup.email}" style="color: var(--accent); text-decoration: underline;">${startup.email}</a></span>
+                </div>
+              </div>
+              <div class="contact-detail-item" style="display: flex; align-items: center; gap: 14px;">
+                <div class="detail-icon" style="width: 38px; height: 38px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--accent);"><i class="fa-solid fa-phone"></i></div>
+                <div class="detail-info" style="display: flex; flex-direction: column; flex: 1;">
+                  <span class="detail-label" style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">Phone Number</span>
+                  <span class="detail-val" style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600;">+91 98765 43210</span>
+                </div>
+              </div>
+              <div class="contact-detail-item" style="display: flex; align-items: center; gap: 14px;">
+                <div class="detail-icon" style="width: 38px; height: 38px; border-radius: 50%; background-color: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--accent);"><i class="fa-brands fa-linkedin"></i></div>
+                <div class="detail-info" style="display: flex; flex-direction: column; flex: 1;">
+                  <span class="detail-label" style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 500;">LinkedIn Profile Link</span>
+                  <span class="detail-val" style="font-size: 0.95rem; color: var(--text-primary); font-weight: 600;"><a href="${startup.linkedin}" target="_blank" style="color: #3b82f6; text-decoration: underline;">${startup.linkedin}</a></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-section">
+          <button class="btn btn-secondary" id="modalCloseContactBtn" style="padding: 10px 20px; font-weight: 600; font-size: 0.9rem;">Close Details</button>
+        </div>
+      `;
+
+      const modalCloseContactBtn = document.getElementById('modalCloseContactBtn');
+      if (modalCloseContactBtn) {
+        modalCloseContactBtn.addEventListener('click', closeModal);
+      }
     }
 
+    // Bind common meeting request button handler
     const btnRequestMeeting = document.getElementById('btnRequestMeeting');
     if (btnRequestMeeting) {
       btnRequestMeeting.addEventListener('click', () => {
@@ -530,6 +603,19 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRequestMeeting.style.opacity = '0.7';
         btnRequestMeeting.style.cursor = 'default';
         btnRequestMeeting.style.boxShadow = 'none';
+      });
+    }
+
+    // Bind inner modal bookmark listener if present
+    const modalBookmarkBtn = document.getElementById('modalBookmarkBtn');
+    if (modalBookmarkBtn) {
+      modalBookmarkBtn.addEventListener('click', () => {
+        toggleShortlist(startup.id);
+        const updatedShortlisted = shortlistedIds.includes(startup.id);
+        modalBookmarkBtn.innerHTML = `
+          <i class="fa-${updatedShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
+          <span>${updatedShortlisted ? 'Shortlisted' : 'Shortlist Pitch'}</span>
+        `;
       });
     }
 
@@ -547,6 +633,9 @@ document.addEventListener('DOMContentLoaded', () => {
     pitchModal.classList.remove('open');
     pitchModal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
+
+    // Uncheck all checkboxes on the cards when modal closes
+    document.querySelectorAll('.cb-view-pitch, .cb-view-contact').forEach(cb => cb.checked = false);
 
     // Accessibility: restore focus
     if (previouslyFocusedElement) {
@@ -597,10 +686,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPitches = document.getElementById('stat-new-pitches');
     const shortlistedPitches = document.getElementById('stat-shortlisted-pitches');
 
-    if (totalPitches) totalPitches.textContent = STARTUP_DATA.length;
+    if (totalPitches) totalPitches.textContent = ALL_PITCHES.length;
 
     if (newPitches) {
-      const newCount = STARTUP_DATA.filter(s => isNewThisWeek(s.submittedDate)).length;
+      const newCount = ALL_PITCHES.filter(s => isNewThisWeek(s.submittedDate)).length;
       newPitches.textContent = newCount;
     }
 
@@ -694,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sync Stats
     const statVetted = document.getElementById('profile-stat-vetted');
     const statShortlist = document.getElementById('profile-stat-shortlist');
-    if (statVetted) statVetted.textContent = STARTUP_DATA.length;
+    if (statVetted) statVetted.textContent = ALL_PITCHES.length;
     if (statShortlist) statShortlist.textContent = shortlistedIds.length;
 
     // Render Edit Mode Selector Chips
@@ -831,6 +920,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Bind Panel Switching and Sidebar Events
+  function bindNavigationEvents() {
+    // Switching Dashboard Panels
+    function switchPanel(panelId) {
+      navItems.forEach(item => {
+        if (item.dataset.panel === panelId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      panels.forEach(panel => {
+        if (panel.id === `panel-${panelId}`) {
+          panel.classList.add('active');
+        } else {
+          panel.classList.remove('active');
+        }
+      });
+
+      if (panelTitles[panelId]) {
+        panelTitle.textContent = panelTitles[panelId];
+      }
+    }
+
+    // Nav Click Event Listeners
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const panelId = item.dataset.panel;
+        switchPanel(panelId);
+        closeMobileSidebar();
+      });
+    });
+
+    // Mobile Sidebar Controls
+    function openMobileSidebar() {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    if (hamburgerMenu) hamburgerMenu.addEventListener('click', openMobileSidebar);
+    if (closeSidebar) closeSidebar.addEventListener('click', closeMobileSidebar);
+    if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeMobileSidebar);
+
+    // Visual Logout Handler
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => {
+        showToast('Logging out...', 'info');
+        setTimeout(() => {
+          alert('Visual logout clicked. Vetted investor authentication session would end here.');
+        }, 500);
+      });
+    }
+  }
+
   // Toast System Helper
   function showToast(message, type = 'success') {
     const toastContainer = document.getElementById('toastContainer');
@@ -859,6 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // INITIALIZE
+  bindNavigationEvents();
   bindFilterListeners();
   applyFiltersAndSort();
   updateStats();

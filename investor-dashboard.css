@@ -47,7 +47,6 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: var(--font-family);
 }
 
 body {
@@ -56,6 +55,11 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.5;
+  font-family: var(--font-family);
+}
+
+input, select, textarea, button {
+  font-family: inherit;
 }
 
 button {
@@ -394,7 +398,7 @@ a:focus-visible {
 .stat-icon-wrapper {
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -531,66 +535,68 @@ a:focus-visible {
    PITCH CARD GRID & PITCH CARDS
    ========================================================================== */
 .pitch-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .pitch-card {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 20px;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 24px;
+  width: 100%;
   transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .pitch-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   border-color: rgba(47, 191, 100, 0.3);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4), 0 0 10px rgba(47, 191, 100, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 10px rgba(47, 191, 100, 0.1);
 }
 
-.card-header {
+.card-avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.card-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-.brand-info {
+.card-main-info {
+  flex: 2;
+  min-width: 0; /* Prevents text overflow */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-title-row {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.card-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.brand-details h3 {
-  font-size: 1.05rem;
+.card-title-row h3 {
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.2;
 }
 
-.brand-details .founder-name {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-}
-
 .status-badge {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -615,15 +621,12 @@ a:focus-visible {
   font-size: 0.9rem;
   color: var(--text-secondary);
   line-height: 1.4;
-  margin-bottom: 16px;
-  flex: 1; /* Pushes content down so footer aligns */
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 16px;
 }
 
 .tag {
@@ -632,19 +635,18 @@ a:focus-visible {
   color: var(--text-secondary);
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 12px;
 }
 
-.card-metrics {
+.card-metrics-col {
+  flex: 1;
+  min-width: 150px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 14px;
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 1px solid var(--border-color);
+  padding-left: 24px;
 }
 
 .metric-label {
@@ -652,22 +654,12 @@ a:focus-visible {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 2px;
 }
 
 .metric-value {
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent);
-}
-
-.card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--border-color);
-  padding-top: 16px;
-  margin-top: auto;
 }
 
 .submission-date {
@@ -675,7 +667,73 @@ a:focus-visible {
   color: var(--text-secondary);
 }
 
-.card-actions {
+.card-actions-col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  border-left: 1px solid var(--border-color);
+  padding-left: 24px;
+  min-width: 180px;
+}
+
+.card-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.custom-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: transparent;
+  transition: all var(--transition-fast);
+}
+
+.custom-checkbox:hover .checkbox-box {
+  border-color: var(--accent);
+}
+
+.custom-checkbox input:checked ~ .checkbox-box {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-primary);
+}
+
+.custom-checkbox input:checked ~ .checkbox-label {
+  color: var(--accent);
+}
+
+.card-footer-actions {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -705,23 +763,6 @@ a:focus-visible {
   border-color: #3b82f6;
   background-color: rgba(59, 130, 246, 0.15);
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
-}
-
-.btn-view-pitch {
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-gradient);
-  color: var(--bg-primary);
-  box-shadow: 0 2px 4px rgba(47, 191, 100, 0.2);
-  transition: all var(--transition-fast);
-}
-
-.btn-view-pitch:hover {
-  background: var(--accent);
-  box-shadow: var(--glow-shadow);
-  transform: translateY(-1px);
 }
 
 /* ==========================================================================
@@ -766,8 +807,6 @@ a:focus-visible {
   transition: all var(--transition-fast);
 }
 
-}
-
 /* ==========================================================================
    PITCH DETAIL MODAL
    ========================================================================== */
@@ -781,12 +820,13 @@ a:focus-visible {
   backdrop-filter: blur(8px);
   z-index: 1000;
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align to top so tall content is scrollable */
   justify-content: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-normal);
-  padding: 20px;
+  padding: 40px 20px;
+  overflow-y: auto; /* Allow backdrop scrolling if modal is taller than screen */
 }
 
 .modal-backdrop.open {
@@ -797,12 +837,12 @@ a:focus-visible {
 .modal {
   width: 100%;
   max-width: 680px;
-  max-height: 90vh;
-  overflow-y: auto;
   position: relative;
   padding: 30px;
   transform: translateY(20px);
   transition: transform var(--transition-normal);
+  margin-top: auto;
+  margin-bottom: auto; /* Vertically center modal if it fits inside viewport */
 }
 
 .modal-backdrop.open .modal {
@@ -852,7 +892,7 @@ a:focus-visible {
 .modal-avatar {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-md);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1533,9 +1573,7 @@ a:focus-visible {
    ========================================================================== */
 
 @media (max-width: 1024px) {
-  .pitch-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  /* No special grid layout columns needed since pitch-grid is flex-column */
 }
 
 @media (max-width: 880px) {
@@ -1576,17 +1614,84 @@ a:focus-visible {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
-  .pitch-grid {
-    grid-template-columns: 1fr;
+
+  /* Make horizontal pitch cards stack vertically on small screens */
+  .pitch-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .card-avatar-wrapper {
+    align-self: flex-start;
+  }
+
+  .card-main-info {
+    width: 100%;
+  }
+
+  .card-metrics-col {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding-left: 0;
+    padding-top: 16px;
+  }
+
+  .card-actions-col {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border-color);
+    padding-left: 0;
+    padding-top: 16px;
+    align-items: stretch;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .card-checkboxes {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .card-footer-actions {
+    align-self: center;
   }
 }
 
 @media (max-width: 600px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-input-group {
+    width: 100%;
+  }
+
   .filter-actions {
     width: 100%;
     justify-content: space-between;
     margin-left: 0;
+    margin-top: 8px;
+  }
+
+  .card-actions-col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .card-checkboxes {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card-footer-actions {
+    align-self: flex-end;
   }
 }
 
