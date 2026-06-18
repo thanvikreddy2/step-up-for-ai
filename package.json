@@ -1,0 +1,11 @@
+{
+  "name": "step-up-for-ai",
+  "version": "1.0.0",
+  "description": "StepUp for AI Website",
+  "scripts": {
+    "dev": "serve"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
