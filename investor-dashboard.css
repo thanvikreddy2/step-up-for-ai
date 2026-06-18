@@ -1090,9 +1090,16 @@ a:focus-visible {
   flex-wrap: wrap;
 }
 
-.profile-avatar-lg {
+.profile-avatar-container {
+  position: relative;
   width: 70px;
   height: 70px;
+  flex-shrink: 0;
+}
+
+.profile-avatar-lg {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   background-color: var(--accent);
   color: var(--bg-primary);
@@ -1102,6 +1109,45 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   box-shadow: 0 0 15px rgba(47, 191, 100, 0.3);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.avatar-sm {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: rgba(3, 7, 18, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  border: 1px solid var(--accent);
+}
+
+.profile-card.edit-mode .avatar-upload-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.avatar-upload-overlay:hover {
+  background-color: rgba(3, 7, 18, 0.85);
+  color: var(--accent);
 }
 
 .profile-headline {

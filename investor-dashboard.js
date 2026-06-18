@@ -204,6 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   let shortlistedIds = JSON.parse(localStorage.getItem('stepup_shortlist')) || [];
+  let profilePicData = localStorage.getItem('stepup_profile_pic') || null;
 
   // Filter State
   const filterState = {
@@ -763,10 +764,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sync sidebar name
     if (sidebarUserName) sidebarUserName.textContent = profileData.name;
 
-    // Sync Initials
+    // Sync Initials & Profile Picture
     const initials = getInitials(profileData.name);
-    if (profileAvatar) profileAvatar.textContent = initials;
-    if (sidebarAvatar) sidebarAvatar.textContent = initials;
+    if (profilePicData) {
+      if (profileAvatar) {
+        profileAvatar.textContent = '';
+        profileAvatar.style.backgroundImage = `url(${profilePicData})`;
+      }
+      if (sidebarAvatar) {
+        sidebarAvatar.textContent = '';
+        sidebarAvatar.style.backgroundImage = `url(${profilePicData})`;
+      }
+    } else {
+      if (profileAvatar) {
+        profileAvatar.textContent = initials;
+        profileAvatar.style.backgroundImage = 'none';
+      }
+      if (sidebarAvatar) {
+        sidebarAvatar.textContent = initials;
+        sidebarAvatar.style.backgroundImage = 'none';
+      }
+    }
 
     // Sync Investment Focus Chips
     if (focusChipsContainer) {
@@ -859,6 +877,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function bindProfileEvents() {
     if (btnEditProfile) {
       btnEditProfile.addEventListener('click', toggleProfileEditMode);
+    }
+
+    // Profile Picture Upload Handler
+    const profilePicUpload = document.getElementById('profilePicUpload');
+    if (profilePicUpload) {
+      profilePicUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const dataUrl = event.target.result;
+            profilePicData = dataUrl;
+            localStorage.setItem('stepup_profile_pic', dataUrl);
+            renderProfile();
+            showToast('Profile picture uploaded successfully!');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
     }
 
     if (btnSaveProfile) {

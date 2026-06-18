@@ -189,7 +189,13 @@
               <!-- Profile Header Card -->
               <div class="profile-card glass-card">
                 <div class="profile-card-header">
-                  <div class="profile-avatar-lg" id="profileAvatar">JD</div>
+                  <div class="profile-avatar-container">
+                    <div class="profile-avatar-lg" id="profileAvatar">JD</div>
+                    <label for="profilePicUpload" class="avatar-upload-overlay" id="avatarUploadOverlay" title="Upload profile picture">
+                      <i class="fa-solid fa-camera"></i>
+                      <input type="file" id="profilePicUpload" accept="image/*" style="display: none;">
+                    </label>
+                  </div>
                   <div class="profile-headline">
                     <div class="profile-name-row">
                       <input type="text" id="profileNameInput" value="John Doe" readonly class="inline-input-header profile-name-input">
