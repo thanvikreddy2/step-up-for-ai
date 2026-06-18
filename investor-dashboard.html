@@ -92,31 +92,321 @@
       <main class="panels-container">
         <!-- PANEL 1: PITCH DECKS -->
         <section id="panel-pitch-decks" class="dashboard-panel active">
-          <!-- Pitch decks panel content goes here -->
-          <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-            <h2>Pitch Decks Panel</h2>
-            <p>Content is loading...</p>
+          <!-- Summary Strip -->
+          <div class="summary-strip">
+            <div class="stat-card glass-card">
+              <div class="stat-icon-wrapper text-green">
+                <i class="fa-solid fa-folder-open"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="stat-total-pitches">0</h3>
+                <p>Total Pitches</p>
+              </div>
+            </div>
+            <div class="stat-card glass-card">
+              <div class="stat-icon-wrapper text-gold">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="stat-new-pitches">0</h3>
+                <p>New This Week</p>
+              </div>
+            </div>
+            <div class="stat-card glass-card">
+              <div class="stat-icon-wrapper text-blue">
+                <i class="fa-solid fa-bookmark"></i>
+              </div>
+              <div class="stat-info">
+                <h3 id="stat-shortlisted-pitches">0</h3>
+                <p>Your Shortlist</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="filter-bar glass-card">
+            <div class="filter-input-group search-group">
+              <i class="fa-solid fa-magnifying-glass search-icon"></i>
+              <input type="text" id="searchBar" placeholder="Search startups..." aria-label="Search startups">
+            </div>
+            
+            <div class="filter-input-group">
+              <select id="sectorFilter" aria-label="Filter by Sector">
+                <option value="all">All Sectors</option>
+                <option value="fintech">Fintech</option>
+                <option value="healthtech">Healthtech</option>
+                <option value="climate">Climate Tech</option>
+                <option value="edtech">Edtech</option>
+                <option value="ai-ml">AI / ML</option>
+                <option value="saas">SaaS</option>
+              </select>
+            </div>
+            
+            <div class="filter-input-group">
+              <select id="stageFilter" aria-label="Filter by Funding Stage">
+                <option value="all">All Stages</option>
+                <option value="Pre-seed">Pre-seed</option>
+                <option value="Seed">Seed</option>
+                <option value="Series A">Series A</option>
+                <option value="Series B+">Series B+</option>
+              </select>
+            </div>
+            
+            <div class="filter-input-group">
+              <select id="sortOrder" aria-label="Sort Pitches">
+                <option value="newest">Newest Submitted</option>
+                <option value="oldest">Oldest Submitted</option>
+                <option value="highest-ask">Highest Ask</option>
+                <option value="lowest-ask">Lowest Ask</option>
+              </select>
+            </div>
+
+            <div class="filter-actions">
+              <span class="results-count" id="resultsCount">0 Results</span>
+              <button class="btn-clear-filters" id="btnClearFilters">Clear All</button>
+            </div>
+          </div>
+
+          <!-- Pitch Card Grid -->
+          <div class="pitch-grid" id="pitchGrid">
+            <!-- Dynamic Pitch Cards will be rendered here -->
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" id="emptyState" style="display: none;">
+            <i class="fa-solid fa-folder-open empty-icon"></i>
+            <h3>No startups match your search</h3>
+            <p>Try clearing some filters or searching for something else.</p>
+            <button class="btn btn-secondary" id="emptyStateReset">Clear Filters</button>
           </div>
         </section>
 
         <!-- PANEL 2: INVESTOR PROFILE -->
         <section id="panel-profile" class="dashboard-panel">
-          <!-- Investor profile panel content goes here -->
-          <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-            <h2>Investor Profile Panel</h2>
-            <p>Content is loading...</p>
+          <div class="profile-layout">
+            <!-- Left Column: Profile Card & Bio -->
+            <div class="profile-main-col">
+              <!-- Profile Header Card -->
+              <div class="profile-card glass-card">
+                <div class="profile-card-header">
+                  <div class="profile-avatar-lg" id="profileAvatar">JD</div>
+                  <div class="profile-headline">
+                    <div class="profile-name-row">
+                      <input type="text" id="profileNameInput" value="John Doe" readonly class="inline-input-header profile-name-input">
+                      <span class="investor-badge">
+                        <i class="fa-solid fa-circle-check"></i> Verified
+                      </span>
+                    </div>
+                    <input type="text" id="profileOrgInput" value="Vanguard Ventures" readonly class="inline-input-header profile-org-input">
+                    <p class="profile-role">Managing Partner</p>
+                  </div>
+                  <button class="btn btn-secondary btn-edit-profile" id="btnEditProfile" aria-label="Edit Profile">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                    <span>Edit Profile</span>
+                  </button>
+                </div>
+                
+                <div class="profile-card-body">
+                  <div class="form-group">
+                    <label for="profileBioInput">Professional Bio</label>
+                    <textarea id="profileBioInput" readonly rows="4">Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Over 15 years of venture capital experience supporting visionary founders from Seed to Series A.</textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Investment Focus</label>
+                    <div class="focus-chips" id="focusChipsContainer">
+                      <!-- Chips will be generated here -->
+                    </div>
+                    <div class="chip-edit-wrapper" id="chipEditWrapper" style="display: none;">
+                      <p class="field-help">Click to toggle investment sectors:</p>
+                      <div class="focus-chips-selector" id="focusChipsSelector">
+                        <!-- Clickable chips for edit mode -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Security / Change Password Form -->
+              <div class="security-card glass-card">
+                <h3>Security Settings</h3>
+                <p class="card-subtitle">Manage your credentials</p>
+                <form id="changePasswordForm" class="password-form">
+                  <div class="form-grid">
+                    <div class="form-group">
+                      <label for="currentPassword">Current Password</label>
+                      <input type="password" id="currentPassword" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                      <label for="newPassword">New Password</label>
+                      <input type="password" id="newPassword" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                      <label for="confirmPassword">Confirm New Password</label>
+                      <input type="password" id="confirmPassword" required placeholder="••••••••">
+                    </div>
+                  </div>
+                  <div class="form-actions-row">
+                    <!-- Note for frontend-only state -->
+                    <!-- PLACEHOLDER FOR FUTURE BACKEND INTEGRATION -->
+                    <button type="submit" class="btn btn-primary btn-save-password">
+                      <i class="fa-solid fa-key"></i>
+                      Update Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right Column: Stats & Contact Details -->
+            <div class="profile-sidebar-col">
+              <!-- Live Stats Card -->
+              <div class="profile-stats-card glass-card">
+                <h3>Vetted Activity</h3>
+                <div class="profile-stats-grid">
+                  <div class="profile-stat-box">
+                    <span class="stat-number" id="profile-stat-vetted">0</span>
+                    <span class="stat-label">Total Vetted</span>
+                  </div>
+                  <div class="profile-stat-box">
+                    <span class="stat-number" id="profile-stat-shortlist">0</span>
+                    <span class="stat-label">Shortlisted</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Info Card -->
+              <div class="profile-contact-card glass-card">
+                <h3>Contact Information</h3>
+                <div class="contact-details-list">
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-envelope"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Email (Issued by Admin)</span>
+                      <span class="detail-val" id="profileEmail">investor.john@stepupforai.org</span>
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-phone"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Phone Number</span>
+                      <input type="tel" id="profilePhoneInput" readonly value="+1 (555) 019-2834" class="inline-input">
+                    </div>
+                  </div>
+                </div>
+                <div class="profile-save-row" id="profileSaveRow" style="display: none;">
+                  <button class="btn btn-primary" id="btnSaveProfile">
+                    <i class="fa-solid fa-check"></i> Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         <!-- PANEL 3: CONTACT DETAILS -->
         <section id="panel-contact" class="dashboard-panel">
-          <!-- Contact details panel content goes here -->
-          <div style="padding: 2rem; text-align: center; color: var(--text-secondary);">
-            <h2>Contact Details Panel</h2>
-            <p>Content is loading...</p>
+          <div class="contact-layout">
+            <!-- Left Column: Message Form -->
+            <div class="contact-main-col">
+              <div class="contact-form-card glass-card">
+                <h3>Send Us a Message</h3>
+                <p class="card-subtitle">Have a question or request? Drop us a line and our team will get back to you.</p>
+                <form id="contactForm" class="message-form">
+                  <div class="form-group">
+                    <label for="contactFormName">Your Name</label>
+                    <input type="text" id="contactFormName" readonly required>
+                  </div>
+                  <div class="form-group">
+                    <label for="contactFormSubject">Subject</label>
+                    <select id="contactFormSubject" required>
+                      <option value="" disabled selected>Select a subject</option>
+                      <option value="pitch-review">Pitch Deck Review Request</option>
+                      <option value="account-billing">Account & Billing</option>
+                      <option value="platform-bug">Platform Bug / Issue</option>
+                      <option value="other">Other Inquiry</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="contactFormMessage">Message</label>
+                    <textarea id="contactFormMessage" required rows="6" placeholder="Enter your message here..."></textarea>
+                  </div>
+                  <div class="form-actions-row">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fa-solid fa-paper-plane"></i>
+                      Send Message
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right Column: Support Channels & Social Row -->
+            <div class="contact-sidebar-col">
+              <!-- Support Card -->
+              <div class="support-channels-card glass-card">
+                <h3>StepUp Support</h3>
+                <p class="card-subtitle">Direct support channels</p>
+                <div class="contact-details-list">
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-headset"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Support Email</span>
+                      <span class="detail-val"><a href="mailto:support@stepupforai.org">support@stepupforai.org</a></span>
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-phone"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Hotline</span>
+                      <span class="detail-val">+91 83410 11206</span>
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-clock"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Office Hours</span>
+                      <span class="detail-val">Mon - Fri, 9:00 AM - 6:00 PM IST</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Brand Social Links -->
+              <div class="support-social-card glass-card">
+                <h3>Connect With Us</h3>
+                <p class="card-subtitle">Follow our community channels</p>
+                <div class="social-links-grid">
+                  <a href="https://www.linkedin.com/company/stepup-intern/" target="_blank" class="social-link-item linkedin" aria-label="StepUp LinkedIn">
+                    <i class="fa-brands fa-linkedin"></i>
+                    <span>LinkedIn</span>
+                  </a>
+                  <a href="https://www.instagram.com/stepup_intern/" target="_blank" class="social-link-item instagram" aria-label="StepUp Instagram">
+                    <i class="fa-brands fa-instagram"></i>
+                    <span>Instagram</span>
+                  </a>
+                  <a href="https://api.whatsapp.com/send/?phone=918341011206&text&type=phone_number&app_absent=0" target="_blank" class="social-link-item whatsapp" aria-label="StepUp WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>WhatsApp</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
+    </div>
+  </div>
+
+  <!-- Pitch Detail Modal -->
+  <div class="modal-backdrop" id="pitchModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal glass-card">
+      <button class="btn-close-modal" id="closeModal" aria-label="Close Modal">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <div class="modal-content" id="modalContent">
+        <!-- Injected dynamically in JS -->
+      </div>
     </div>
   </div>
 
