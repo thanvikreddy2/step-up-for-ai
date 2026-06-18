@@ -213,10 +213,16 @@
                     <input type="text" id="profileOrgInput" value="Thanvik Ventures" readonly class="inline-input-header profile-org-input">
                     <p class="profile-role">Managing Partner</p>
                   </div>
-                  <button class="btn btn-secondary btn-edit-profile" id="btnEditProfile" aria-label="Edit Profile">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span>Edit Profile</span>
-                  </button>
+                  <div class="profile-header-actions" style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-primary" id="btnSaveProfileHeader" style="display: none; font-size: 0.85rem; font-weight: 600; padding: 8px 16px; border-radius: var(--radius-sm);" aria-label="Save Changes">
+                      <i class="fa-solid fa-check"></i>
+                      <span>Save</span>
+                    </button>
+                    <button class="btn btn-secondary btn-edit-profile" id="btnEditProfile" aria-label="Edit Profile">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                      <span>Edit Profile</span>
+                    </button>
+                  </div>
                 </div>
                 
                 <div class="profile-card-body">

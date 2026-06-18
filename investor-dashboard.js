@@ -376,16 +376,23 @@ document.addEventListener('DOMContentLoaded', () => {
       card.setAttribute('tabindex', '0'); // Keyboard navigation accessibility
       card.setAttribute('aria-label', `${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`);
 
-      // Determine correct status badge display text and class
+      // Determine correct status badge display text and class dynamically
+      let displayStatus = startup.status;
+      if (isShortlisted) {
+        displayStatus = 'Shortlisted';
+      } else if (startup.status === 'Shortlisted') {
+        displayStatus = 'Under Review';
+      }
+
       let badgeClass = 'new';
-      if (startup.status === 'Under Review') badgeClass = 'review';
-      if (startup.status === 'Shortlisted') badgeClass = 'shortlisted';
+      if (displayStatus === 'Under Review') badgeClass = 'review';
+      if (displayStatus === 'Shortlisted') badgeClass = 'shortlisted';
 
       card.innerHTML = `
         <div class="card-main-info">
           <div class="card-title-row">
             <h3>${startup.name}</h3>
-            <span class="status-badge ${badgeClass}">${startup.status}</span>
+            <span class="status-badge ${badgeClass}">${displayStatus}</span>
           </div>
           <p class="card-tagline">${startup.tagline}</p>
           <div class="card-tags">
@@ -489,9 +496,16 @@ document.addEventListener('DOMContentLoaded', () => {
     previouslyFocusedElement = triggerElement;
     const isShortlisted = shortlistedIds.includes(startup.id);
 
+    let displayStatus = startup.status;
+    if (isShortlisted) {
+      displayStatus = 'Shortlisted';
+    } else if (startup.status === 'Shortlisted') {
+      displayStatus = 'Under Review';
+    }
+
     let badgeClass = 'new';
-    if (startup.status === 'Under Review') badgeClass = 'review';
-    if (startup.status === 'Shortlisted') badgeClass = 'shortlisted';
+    if (displayStatus === 'Under Review') badgeClass = 'review';
+    if (displayStatus === 'Shortlisted') badgeClass = 'shortlisted';
 
     if (mode === 'pitch') {
       // Injects detailed Pitch View content
@@ -503,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="modal-meta-tags">
                 <span class="tag">${startup.sectorLabel}</span>
                 <span class="tag">${startup.stage}</span>
-                <span class="status-badge ${badgeClass}">${startup.status}</span>
+                <span class="status-badge ${badgeClass}">${displayStatus}</span>
               </div>
               <p class="modal-tagline">${startup.tagline}</p>
             </div>
@@ -637,6 +651,24 @@ document.addEventListener('DOMContentLoaded', () => {
           <i class="fa-${updatedShortlisted ? 'solid' : 'regular'} fa-bookmark"></i>
           <span>${updatedShortlisted ? 'Shortlisted' : 'Shortlist Pitch'}</span>
         `;
+
+        // Update the status badge in the modal dynamically
+        const modalStatusBadge = modalContent.querySelector('.status-badge');
+        if (modalStatusBadge) {
+          let updatedStatus = startup.status;
+          if (updatedShortlisted) {
+            updatedStatus = 'Shortlisted';
+          } else if (startup.status === 'Shortlisted') {
+            updatedStatus = 'Under Review';
+          }
+
+          let updatedBadgeClass = 'new';
+          if (updatedStatus === 'Under Review') updatedBadgeClass = 'review';
+          if (updatedStatus === 'Shortlisted') updatedBadgeClass = 'shortlisted';
+
+          modalStatusBadge.className = `status-badge ${updatedBadgeClass}`;
+          modalStatusBadge.textContent = updatedStatus;
+        }
       });
     }
 
@@ -762,6 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chipEditWrapper = document.getElementById('chipEditWrapper');
   
   const btnEditProfile = document.getElementById('btnEditProfile');
+  const btnSaveProfileHeader = document.getElementById('btnSaveProfileHeader');
   const profileSaveRow = document.getElementById('profileSaveRow');
   const btnSaveProfile = document.getElementById('btnSaveProfile');
   
@@ -882,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (chipEditWrapper) chipEditWrapper.style.display = 'block';
       if (profileSaveRow) profileSaveRow.style.display = 'flex';
+      if (btnSaveProfileHeader) btnSaveProfileHeader.style.display = 'inline-flex';
 
       if (btnEditProfile) {
         btnEditProfile.innerHTML = `<i class="fa-solid fa-xmark"></i> <span>Cancel</span>`;
@@ -901,6 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (chipEditWrapper) chipEditWrapper.style.display = 'none';
       if (profileSaveRow) profileSaveRow.style.display = 'none';
+      if (btnSaveProfileHeader) btnSaveProfileHeader.style.display = 'none';
 
       if (btnEditProfile) {
         btnEditProfile.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> <span>Edit Profile</span>`;
@@ -914,6 +949,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function bindProfileEvents() {
     if (btnEditProfile) {
       btnEditProfile.addEventListener('click', toggleProfileEditMode);
+    }
+
+    if (btnSaveProfileHeader) {
+      btnSaveProfileHeader.addEventListener('click', () => {
+        if (btnSaveProfile) btnSaveProfile.click();
+      });
     }
 
     // Profile Picture Upload Handler
@@ -983,13 +1024,16 @@ document.addEventListener('DOMContentLoaded', () => {
       contactForm.addEventListener('submit', (e) => {
         e.preventDefault();
         
+        const name = (profileData && profileData.name) || 'Thanvik Reddy';
         const subject = document.getElementById('contactFormSubject').value;
         const message = document.getElementById('contactFormMessage').value;
 
-        // FRONT-END ONLY PLACEHOLDER FOR FUTURE BACKEND CONTACT WIRE
-        // API Endpoint: POST /api/support/message
-        // Payload: { name: profileData.name, subject, message }
-        showToast('Message sent successfully!');
+        // Open WhatsApp API in a new window/tab
+        const text = `Hello StepUp Team,\n\nName: ${name}\nSubject: ${subject}\nMessage: ${message}`;
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
+        
+        showToast('Opening WhatsApp...');
+        window.open(whatsappUrl, '_blank');
         
         // Reset form subject & message fields
         const subjectEl = document.getElementById('contactFormSubject');

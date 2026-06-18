@@ -797,6 +797,34 @@ a:focus-visible {
   margin-bottom: 20px;
 }
 
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-family);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: var(--bg-primary);
+  border-color: var(--accent);
+  box-shadow: 0 4px 10px rgba(47, 191, 100, 0.2);
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+  box-shadow: var(--glow-shadow);
+  transform: translateY(-1px);
+}
+
 .btn-secondary {
   font-size: 0.85rem;
   font-weight: 600;
