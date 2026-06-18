@@ -56,9 +56,9 @@
 
       <div class="sidebar-footer">
         <div class="user-profile-sm">
-          <div class="avatar-sm">JD</div>
+          <div class="avatar-sm">TR</div>
           <div class="user-info-sm">
-            <h4 class="user-name">John Doe</h4>
+            <h4 class="user-name">Thanvik Reddy</h4>
             <span class="user-role">Vetted Investor</span>
           </div>
         </div>
@@ -153,6 +153,13 @@
             </div>
             
             <div class="filter-input-group">
+              <select id="shortlistFilter" aria-label="Filter by Shortlist">
+                <option value="all">All Pitches</option>
+                <option value="shortlisted">Shortlisted Only</option>
+              </select>
+            </div>
+            
+            <div class="filter-input-group">
               <select id="sortOrder" aria-label="Sort Pitches">
                 <option value="newest">Newest Submitted</option>
                 <option value="oldest">Oldest Submitted</option>
@@ -190,7 +197,7 @@
               <div class="profile-card glass-card">
                 <div class="profile-card-header">
                   <div class="profile-avatar-container">
-                    <div class="profile-avatar-lg" id="profileAvatar">JD</div>
+                    <div class="profile-avatar-lg" id="profileAvatar">TR</div>
                     <label for="profilePicUpload" class="avatar-upload-overlay" id="avatarUploadOverlay" title="Upload profile picture">
                       <i class="fa-solid fa-camera"></i>
                       <input type="file" id="profilePicUpload" accept="image/*" style="display: none;">
@@ -198,12 +205,12 @@
                   </div>
                   <div class="profile-headline">
                     <div class="profile-name-row">
-                      <input type="text" id="profileNameInput" value="John Doe" readonly class="inline-input-header profile-name-input">
+                      <input type="text" id="profileNameInput" value="Thanvik Reddy" readonly class="inline-input-header profile-name-input">
                       <span class="investor-badge">
                         <i class="fa-solid fa-circle-check"></i> Verified
                       </span>
                     </div>
-                    <input type="text" id="profileOrgInput" value="Vanguard Ventures" readonly class="inline-input-header profile-org-input">
+                    <input type="text" id="profileOrgInput" value="Thanvik Ventures" readonly class="inline-input-header profile-org-input">
                     <p class="profile-role">Managing Partner</p>
                   </div>
                   <button class="btn btn-secondary btn-edit-profile" id="btnEditProfile" aria-label="Edit Profile">
@@ -215,7 +222,7 @@
                 <div class="profile-card-body">
                   <div class="form-group">
                     <label for="profileBioInput">Professional Bio</label>
-                    <textarea id="profileBioInput" readonly rows="4">Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Over 15 years of venture capital experience supporting visionary founders from Seed to Series A.</textarea>
+                    <textarea id="profileBioInput" readonly rows="4">Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Supporting visionary founders from Seed to Series A.</textarea>
                   </div>
 
                   <div class="form-group">
@@ -289,14 +296,35 @@
                     <div class="detail-icon"><i class="fa-solid fa-envelope"></i></div>
                     <div class="detail-info">
                       <span class="detail-label">Email (Issued by Admin)</span>
-                      <span class="detail-val" id="profileEmail">investor.john@stepupforai.org</span>
+                      <span class="detail-val" id="profileEmail">thanvikreddy2@gmail.com</span>
                     </div>
                   </div>
                   <div class="contact-detail-item">
                     <div class="detail-icon"><i class="fa-solid fa-phone"></i></div>
                     <div class="detail-info">
                       <span class="detail-label">Phone Number</span>
-                      <input type="tel" id="profilePhoneInput" readonly value="+1 (555) 019-2834" class="inline-input">
+                      <input type="tel" id="profilePhoneInput" readonly value="+91 83410 11206" class="inline-input">
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-brands fa-linkedin"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">LinkedIn Link</span>
+                      <input type="url" id="profileLinkedinInput" readonly value="https://linkedin.com/in/thanvik-reddy" class="inline-input">
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-brands fa-x-twitter"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Twitter / X Link</span>
+                      <input type="url" id="profileTwitterInput" readonly value="https://x.com/thanvik_reddy" class="inline-input">
+                    </div>
+                  </div>
+                  <div class="contact-detail-item">
+                    <div class="detail-icon"><i class="fa-solid fa-globe"></i></div>
+                    <div class="detail-info">
+                      <span class="detail-label">Website / Fund Link</span>
+                      <input type="url" id="profileWebsiteInput" readonly value="https://thanvikventures.com" class="inline-input">
                     </div>
                   </div>
                 </div>
@@ -325,13 +353,7 @@
                   </div>
                   <div class="form-group">
                     <label for="contactFormSubject">Subject</label>
-                    <select id="contactFormSubject" required>
-                      <option value="" disabled selected>Select a subject</option>
-                      <option value="pitch-review">Pitch Deck Review Request</option>
-                      <option value="account-billing">Account & Billing</option>
-                      <option value="platform-bug">Platform Bug / Issue</option>
-                      <option value="other">Other Inquiry</option>
-                    </select>
+                    <input type="text" id="contactFormSubject" required placeholder="Enter subject here...">
                   </div>
                   <div class="form-group">
                     <label for="contactFormMessage">Message</label>

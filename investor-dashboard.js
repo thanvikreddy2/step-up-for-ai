@@ -203,7 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // State
-  let shortlistedIds = JSON.parse(localStorage.getItem('stepup_shortlist')) || [];
+  let shortlistedIds = JSON.parse(localStorage.getItem('stepup_shortlist'));
+  if (shortlistedIds === null) {
+    shortlistedIds = STARTUP_DATA.filter(s => s.status === 'Shortlisted').map(s => s.id);
+    localStorage.setItem('stepup_shortlist', JSON.stringify(shortlistedIds));
+  }
   let profilePicData = localStorage.getItem('stepup_profile_pic') || null;
 
   // Filter State
@@ -211,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     search: '',
     sector: 'all',
     stage: 'all',
+    shortlist: 'all',
     sort: 'newest'
   };
 
@@ -264,6 +269,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Stage Filter
     if (filterState.stage !== 'all') {
       filtered = filtered.filter(startup => startup.stage === filterState.stage);
+    }
+
+    // 3.5. Shortlist Filter
+    if (filterState.shortlist === 'shortlisted') {
+      filtered = filtered.filter(startup => shortlistedIds.includes(startup.id));
     }
 
     // 4. Sorting
@@ -324,15 +334,25 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    const shortlistFilter = document.getElementById('shortlistFilter');
+    if (shortlistFilter) {
+      shortlistFilter.addEventListener('change', (e) => {
+        filterState.shortlist = e.target.value;
+        applyFiltersAndSort();
+      });
+    }
+
     function clearAllFilters() {
       filterState.search = '';
       filterState.sector = 'all';
       filterState.stage = 'all';
+      filterState.shortlist = 'all';
       filterState.sort = 'newest';
 
       if (searchBar) searchBar.value = '';
       if (sectorFilter) sectorFilter.value = 'all';
       if (stageFilter) stageFilter.value = 'all';
+      if (shortlistFilter) shortlistFilter.value = 'all';
       if (sortOrder) sortOrder.value = 'newest';
 
       applyFiltersAndSort();
@@ -700,14 +720,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Profile State
-  const profileData = {
-    name: 'John Doe',
-    org: 'Vanguard Ventures',
-    bio: 'Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Over 15 years of venture capital experience supporting visionary founders from Seed to Series A.',
-    phone: '+1 (555) 019-2834',
-    email: 'investor.john@stepupforai.org',
+  const defaultProfileData = {
+    name: 'Thanvik Reddy',
+    org: 'Thanvik Ventures',
+    bio: 'Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Supporting visionary founders from Seed to Series A.',
+    phone: '+91 83410 11206',
+    email: 'thanvikreddy2@gmail.com',
+    linkedin: 'https://linkedin.com/in/thanvik-reddy',
+    twitter: 'https://x.com/thanvik_reddy',
+    website: 'https://thanvikventures.com',
     focusSectors: ['ai-ml', 'climate', 'saas']
   };
+
+  let profileData = JSON.parse(localStorage.getItem('stepup_profile_data')) || defaultProfileData;
 
   const sectorLabelsMap = {
     'ai-ml': 'AI / ML',
@@ -728,6 +753,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileBioInput = document.getElementById('profileBioInput');
   const profilePhoneInput = document.getElementById('profilePhoneInput');
   const profileEmail = document.getElementById('profileEmail');
+  const profileLinkedinInput = document.getElementById('profileLinkedinInput');
+  const profileTwitterInput = document.getElementById('profileTwitterInput');
+  const profileWebsiteInput = document.getElementById('profileWebsiteInput');
   
   const focusChipsContainer = document.getElementById('focusChipsContainer');
   const focusChipsSelector = document.getElementById('focusChipsSelector');
@@ -759,6 +787,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profileBioInput) profileBioInput.value = profileData.bio;
     if (profilePhoneInput) profilePhoneInput.value = profileData.phone;
     if (profileEmail) profileEmail.textContent = profileData.email;
+    if (profileLinkedinInput) profileLinkedinInput.value = profileData.linkedin || '';
+    if (profileTwitterInput) profileTwitterInput.value = profileData.twitter || '';
+    if (profileWebsiteInput) profileWebsiteInput.value = profileData.website || '';
     if (contactFormName) contactFormName.value = profileData.name;
 
     // Sync sidebar name
@@ -845,6 +876,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (profileOrgInput) profileOrgInput.removeAttribute('readonly');
       if (profileBioInput) profileBioInput.removeAttribute('readonly');
       if (profilePhoneInput) profilePhoneInput.removeAttribute('readonly');
+      if (profileLinkedinInput) profileLinkedinInput.removeAttribute('readonly');
+      if (profileTwitterInput) profileTwitterInput.removeAttribute('readonly');
+      if (profileWebsiteInput) profileWebsiteInput.removeAttribute('readonly');
 
       if (chipEditWrapper) chipEditWrapper.style.display = 'block';
       if (profileSaveRow) profileSaveRow.style.display = 'flex';
@@ -861,6 +895,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (profileOrgInput) profileOrgInput.setAttribute('readonly', 'true');
       if (profileBioInput) profileBioInput.setAttribute('readonly', 'true');
       if (profilePhoneInput) profilePhoneInput.setAttribute('readonly', 'true');
+      if (profileLinkedinInput) profileLinkedinInput.setAttribute('readonly', 'true');
+      if (profileTwitterInput) profileTwitterInput.setAttribute('readonly', 'true');
+      if (profileWebsiteInput) profileWebsiteInput.setAttribute('readonly', 'true');
 
       if (chipEditWrapper) chipEditWrapper.style.display = 'none';
       if (profileSaveRow) profileSaveRow.style.display = 'none';
@@ -901,10 +938,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnSaveProfile) {
       btnSaveProfile.addEventListener('click', () => {
         // Save values
-        if (profileNameInput) profileData.name = profileNameInput.value.trim() || 'John Doe';
-        if (profileOrgInput) profileData.org = profileOrgInput.value.trim() || 'Vanguard Ventures';
+        if (profileNameInput) profileData.name = profileNameInput.value.trim() || 'Thanvik Reddy';
+        if (profileOrgInput) profileData.org = profileOrgInput.value.trim() || 'Thanvik Ventures';
         if (profileBioInput) profileData.bio = profileBioInput.value.trim();
         if (profilePhoneInput) profileData.phone = profilePhoneInput.value.trim();
+        if (profileLinkedinInput) profileData.linkedin = profileLinkedinInput.value.trim();
+        if (profileTwitterInput) profileData.twitter = profileTwitterInput.value.trim();
+        if (profileWebsiteInput) profileData.website = profileWebsiteInput.value.trim();
+
+        // Persist profile data to localStorage
+        localStorage.setItem('stepup_profile_data', JSON.stringify(profileData));
 
         // Exit Edit Mode & Notify
         toggleProfileEditMode();
@@ -951,7 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset form subject & message fields
         const subjectEl = document.getElementById('contactFormSubject');
         const messageEl = document.getElementById('contactFormMessage');
-        if (subjectEl) subjectEl.selectedIndex = 0;
+        if (subjectEl) subjectEl.value = '';
         if (messageEl) messageEl.value = '';
       });
     }
