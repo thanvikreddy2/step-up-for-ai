@@ -1782,3 +1782,68 @@ a:focus-visible {
     padding: 8px 10px;
   }
 }
+
+/* Custom Neon Range Sliders for Scorecard */
+.scorecard-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+  margin: 6px 0;
+  transition: all 0.2s;
+}
+
+.scorecard-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.scorecard-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  margin-top: -4px;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.scorecard-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  background: #14b8a6;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.9);
+}
+
+.scorecard-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.scorecard-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.scorecard-slider::-moz-range-thumb:hover {
+  transform: scale(1.3);
+  background: #14b8a6;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.9);
+}
+

@@ -282,6 +282,41 @@ export default function InvestorDashboard() {
   // Sidebar Mobile State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // New Deal Room, Kanban, and Rating state variables
+  const [dashboardView, setDashboardView] = useState<"list" | "pipeline">("list");
+  const [activeTab, setActiveTab] = useState<"overview" | "dataroom" | "captable" | "notes">("overview");
+  const [startupRatings, setStartupRatings] = useState<Record<string, { pedigree: number; tailwinds: number; moat: number }>>({});
+  const [startupNotes, setStartupNotes] = useState<Record<string, string>>({});
+
+  const formatLakhs = (amount: number) => {
+    if (amount >= 10000000) {
+      return `₹${(amount / 10000000).toFixed(1).replace(/\.0$/, "")} Cr`;
+    }
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(1).replace(/\.0$/, "")} L`;
+    }
+    return `₹${amount.toLocaleString("en-IN")}`;
+  };
+
+  const updateNotes = (startupId: string, notesText: string) => {
+    const updated = { ...startupNotes, [startupId]: notesText };
+    setStartupNotes(updated);
+    localStorage.setItem("stepup_startup_notes", JSON.stringify(updated));
+  };
+
+  const updateRating = (startupId: string, metric: "pedigree" | "tailwinds" | "moat", value: number) => {
+    const current = startupRatings[startupId] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 };
+    const updated = {
+      ...startupRatings,
+      [startupId]: {
+        ...current,
+        [metric]: value
+      }
+    };
+    setStartupRatings(updated);
+    localStorage.setItem("stepup_startup_ratings", JSON.stringify(updated));
+  };
+
   // Load from localStorage on mount
   useEffect(() => {
     setIsMounted(true);
@@ -308,6 +343,15 @@ export default function InvestorDashboard() {
     const studentPitches = localStorage.getItem("stepup_student_pitches");
     if (studentPitches) {
       setAllPitches([...JSON.parse(studentPitches), ...STARTUP_DATA]);
+    }
+
+    const savedNotes = localStorage.getItem("stepup_startup_notes");
+    if (savedNotes) {
+      setStartupNotes(JSON.parse(savedNotes));
+    }
+    const savedRatings = localStorage.getItem("stepup_startup_ratings");
+    if (savedRatings) {
+      setStartupRatings(JSON.parse(savedRatings));
     }
   }, []);
 
@@ -846,11 +890,53 @@ export default function InvestorDashboard() {
 
   const filteredPitches = getFilteredPitches();
 
+  const getPipelineColumns = () => {
+    const newInbound: Startup[] = [];
+    const introCall: Startup[] = [];
+    const dueDiligence: Startup[] = [];
+    const shortlisted: Startup[] = [];
+
+    filteredPitches.forEach(startup => {
+      if (shortlistedIds.includes(startup.id)) {
+        shortlisted.push(startup);
+      } else {
+        switch (startup.id) {
+          case "apex-ai":
+          case "solarloop":
+          case "neurocare":
+          case "promptcraft":
+            newInbound.push(startup);
+            break;
+          case "wealthstream":
+          case "learnsphere":
+            introCall.push(startup);
+            break;
+          case "paychain":
+          case "saasify":
+            dueDiligence.push(startup);
+            break;
+          default:
+            if (startup.status === "New") {
+              newInbound.push(startup);
+            } else if (startup.status === "Shortlisted") {
+              shortlisted.push(startup);
+            } else {
+              introCall.push(startup);
+            }
+            break;
+        }
+      }
+    });
+
+    return { newInbound, introCall, dueDiligence, shortlisted };
+  };
+
   // Modal controllers
   const openPitchModal = (startup: Startup, mode: "pitch" | "contact" | "deck") => {
     setSelectedStartup(startup);
     setModalMode(mode);
     setCurrentSlide(0);
+    setActiveTab("overview");
     setIsModalOpen(true);
   };
 
@@ -1245,87 +1331,260 @@ export default function InvestorDashboard() {
                 </div>
               </div>
 
-              {/* Pitch Card Grid */}
-              <div className="pitch-grid" id="pitchGrid">
-                {filteredPitches.map(startup => {
-                  const isStartupShortlisted = shortlistedIds.includes(startup.id);
-
-                  let startupDisplayStatus = startup.status;
-                  if (isStartupShortlisted) {
-                    startupDisplayStatus = "Shortlisted";
-                  } else if (startup.status === "Shortlisted") {
-                    startupDisplayStatus = "Under Review";
-                  }
-
-                  let startupBadgeClass = "new";
-                  if (startupDisplayStatus === "Under Review") startupBadgeClass = "review";
-                  if (startupDisplayStatus === "Shortlisted") startupBadgeClass = "shortlisted";
-
-                  return (
-                    <article className="pitch-card glass-card" key={startup.id} tabIndex={0} aria-label={`${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`}>
-                      <div className="card-main-info">
-                        <div className="card-title-row">
-                          <h3>{startup.name}</h3>
-                          <span className={`status-badge ${startupBadgeClass}`}>{startupDisplayStatus}</span>
-                        </div>
-                        <p className="card-tagline">{startup.tagline}</p>
-                        <div className="card-tags">
-                          <span className="tag">{startup.sectorLabel}</span>
-                          <span className="tag">{startup.stage}</span>
-                        </div>
-                      </div>
-
-                      <div className="card-metrics-col">
-                        <div className="metric-label">Funding Ask</div>
-                        <div className="metric-value">{formatAskAmount(startup.ask)}</div>
-                        <span className="submission-date">Submitted: {startup.submittedDate}</span>
-                      </div>
-
-                      <div className="card-actions-col">
-                        <div className="card-checkboxes">
-                          <label className="custom-checkbox">
-                            <input type="checkbox" className="cb-view-pitch" checked={selectedStartup?.id === startup.id && modalMode === "pitch" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "pitch"); else closePitchModal(); }} aria-label="Check to view full pitch details" />
-                            <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
-                            <span className="checkbox-label">More Details</span>
-                          </label>
-                          <label className="custom-checkbox">
-                            <input type="checkbox" className="cb-view-contact" checked={selectedStartup?.id === startup.id && modalMode === "contact" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "contact"); else closePitchModal(); }} aria-label="Check to view owner contact details" />
-                            <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
-                            <span className="checkbox-label">Contact Details</span>
-                          </label>
-                        </div>
-                        
-                        <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                          <button 
-                            className="btn-pitch-deck-action" 
-                            onClick={() => openPitchModal(startup, "deck")}
-                            style={{
-                              padding: "6px 12px",
-                              borderRadius: "8px",
-                              background: "rgba(47, 191, 100, 0.1)",
-                              border: "1px solid rgba(47, 191, 100, 0.2)",
-                              color: "var(--accent)",
-                              fontSize: "0.8rem",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "6px",
-                              transition: "all var(--transition-fast)"
-                            }}
-                          >
-                            <i className="fa-solid fa-file-pdf"></i>
-                            <span>Pitch Deck</span>
-                          </button>
-                          <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isStartupShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isStartupShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
-                            <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+              {/* View Selector Header Row */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)", paddingBottom: "16px" }}>
+                <span className="results-count" id="resultsCount" style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                  {filteredPitches.length} Startups Found
+                </span>
+                
+                {/* Segmented Controller */}
+                <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px", padding: "3px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                  <button
+                    onClick={() => setDashboardView("list")}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: "6px",
+                      border: "none",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.2s",
+                      background: dashboardView === "list" ? "#10b981" : "transparent",
+                      color: dashboardView === "list" ? "#030712" : "rgba(255, 255, 255, 0.6)"
+                    }}
+                  >
+                    <i className="fa-solid fa-list"></i>
+                    <span>List View</span>
+                  </button>
+                  <button
+                    onClick={() => setDashboardView("pipeline")}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: "6px",
+                      border: "none",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "all 0.2s",
+                      background: dashboardView === "pipeline" ? "#10b981" : "transparent",
+                      color: dashboardView === "pipeline" ? "#030712" : "rgba(255, 255, 255, 0.6)"
+                    }}
+                  >
+                    <i className="fa-solid fa-table-columns"></i>
+                    <span>Pipeline Board</span>
+                  </button>
+                </div>
               </div>
+
+              {dashboardView === "list" ? (
+                /* Pitch Card Grid */
+                <div className="pitch-grid" id="pitchGrid">
+                  {filteredPitches.map(startup => {
+                    const isStartupShortlisted = shortlistedIds.includes(startup.id);
+
+                    let startupDisplayStatus = startup.status;
+                    if (isStartupShortlisted) {
+                      startupDisplayStatus = "Shortlisted";
+                    } else if (startup.status === "Shortlisted") {
+                      startupDisplayStatus = "Under Review";
+                    }
+
+                    let startupBadgeClass = "new";
+                    if (startupDisplayStatus === "Under Review") startupBadgeClass = "review";
+                    if (startupDisplayStatus === "Shortlisted") startupBadgeClass = "shortlisted";
+
+                    return (
+                      <article className="pitch-card glass-card" key={startup.id} tabIndex={0} aria-label={`${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`}>
+                        <div className="card-main-info">
+                          <div className="card-title-row">
+                            <h3>{startup.name}</h3>
+                            <span className={`status-badge ${startupBadgeClass}`}>{startupDisplayStatus}</span>
+                          </div>
+                          <p className="card-tagline">{startup.tagline}</p>
+                          <div className="card-tags">
+                            <span className="tag">{startup.sectorLabel}</span>
+                            <span className="tag">{startup.stage}</span>
+                          </div>
+                        </div>
+
+                        <div className="card-metrics-col">
+                          <div className="metric-label">Funding Ask</div>
+                          <div className="metric-value">{formatAskAmount(startup.ask)}</div>
+                          <span className="submission-date">Submitted: {startup.submittedDate}</span>
+                        </div>
+
+                        <div className="card-actions-col">
+                          <div className="card-checkboxes">
+                            <label className="custom-checkbox">
+                              <input type="checkbox" className="cb-view-pitch" checked={selectedStartup?.id === startup.id && modalMode === "pitch" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "pitch"); else closePitchModal(); }} aria-label="Check to view full pitch details" />
+                              <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
+                              <span className="checkbox-label">More Details</span>
+                            </label>
+                            <label className="custom-checkbox">
+                              <input type="checkbox" className="cb-view-contact" checked={selectedStartup?.id === startup.id && modalMode === "contact" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "contact"); else closePitchModal(); }} aria-label="Check to view owner contact details" />
+                              <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
+                              <span className="checkbox-label">Contact Details</span>
+                            </label>
+                          </div>
+                          
+                          <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                            <button 
+                              className="btn-pitch-deck-action" 
+                              onClick={() => openPitchModal(startup, "deck")}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: "8px",
+                                background: "rgba(47, 191, 100, 0.1)",
+                                border: "1px solid rgba(47, 191, 100, 0.2)",
+                                color: "var(--accent)",
+                                fontSize: "0.8rem",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                transition: "all var(--transition-fast)"
+                              }}
+                            >
+                              <i className="fa-solid fa-file-pdf"></i>
+                              <span>Pitch Deck</span>
+                            </button>
+                            <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isStartupShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isStartupShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
+                              <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* Pipeline Kanban Board View */
+                <div style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px", alignItems: "flex-start", width: "100%" }}>
+                  {[
+                    { id: "new", title: "New Inbound", color: "#3b82f6", items: getPipelineColumns().newInbound },
+                    { id: "intro", title: "Intro Call", color: "#f59e0b", items: getPipelineColumns().introCall },
+                    { id: "diligence", title: "Due Diligence", color: "#8b5cf6", items: getPipelineColumns().dueDiligence },
+                    { id: "shortlisted", title: "Shortlisted", color: "#10b981", items: getPipelineColumns().shortlisted }
+                  ].map(column => (
+                    <div key={column.id} style={{
+                      flex: "1 1 0px",
+                      minWidth: "255px",
+                      background: "rgba(3, 7, 18, 0.4)",
+                      border: "1px solid rgba(255, 255, 255, 0.05)",
+                      borderRadius: "16px",
+                      padding: "16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "14px",
+                      maxHeight: "750px",
+                      overflow: "hidden"
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "10px", marginBottom: "4px" }}>
+                        <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#ffffff", margin: 0, display: "flex", alignItems: "center", gap: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: column.color }} />
+                          {column.title}
+                        </h3>
+                        <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: "10px", color: "rgba(255, 255, 255, 0.6)", fontWeight: 600 }}>
+                          {column.items.length}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", paddingRight: "4px", minHeight: "100px" }}>
+                        {column.items.length === 0 ? (
+                          <div style={{ padding: "30px 10px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", border: "1px dashed rgba(255,255,255,0.05)", borderRadius: "8px" }}>
+                            No deals in this stage
+                          </div>
+                        ) : (
+                          column.items.map(startup => {
+                            const isStartupShortlisted = shortlistedIds.includes(startup.id);
+                            return (
+                              <div key={startup.id} className="glass-card" style={{
+                                padding: "16px",
+                                borderRadius: "12px",
+                                border: "1px solid rgba(255, 255, 255, 0.05)",
+                                background: "rgba(255, 255, 255, 0.015)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "10px"
+                              }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                                  <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#ffffff", margin: 0 }}>{startup.name}</h4>
+                                  <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} style={{ padding: "4px", minWidth: "auto", height: "auto", background: "transparent", border: "none", cursor: "pointer" }}>
+                                    <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`} style={{ fontSize: "0.85rem", color: isStartupShortlisted ? "#10b981" : "rgba(255,255,255,0.4)" }}></i>
+                                  </button>
+                                </div>
+                                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                  <span style={{ fontSize: "0.65rem", padding: "2px 6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px", color: "rgba(255,255,255,0.5)" }}>{startup.sectorLabel}</span>
+                                  <span style={{ fontSize: "0.65rem", padding: "2px 6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px", color: "rgba(255,255,255,0.5)" }}>{startup.stage}</span>
+                                </div>
+                                <p style={{
+                                  fontSize: "0.75rem",
+                                  color: "rgba(255, 255, 255, 0.5)",
+                                  margin: 0,
+                                  lineClamp: 2,
+                                  display: "-webkit-box",
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: "vertical",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  lineHeight: "1.4"
+                                }}>
+                                  {startup.tagline}
+                                </p>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "10px", marginTop: "4px" }}>
+                                  <div>
+                                    <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Ask</div>
+                                    <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#10b981" }}>{formatAskAmount(startup.ask)}</div>
+                                  </div>
+                                  <div style={{ display: "flex", gap: "6px" }}>
+                                    <button 
+                                      onClick={() => openPitchModal(startup, "pitch")}
+                                      style={{
+                                        padding: "4px 8px",
+                                        borderRadius: "6px",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(255,255,255,0.03)",
+                                        color: "#ffffff",
+                                        fontSize: "0.7rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      Details
+                                    </button>
+                                    <button 
+                                      onClick={() => openPitchModal(startup, "deck")}
+                                      style={{
+                                        padding: "4px 8px",
+                                        borderRadius: "6px",
+                                        background: "rgba(47, 191, 100, 0.1)",
+                                        border: "1px solid rgba(47, 191, 100, 0.2)",
+                                        color: "var(--accent)",
+                                        fontSize: "0.7rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      Deck
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Empty State */}
               {filteredPitches.length === 0 && (
@@ -1549,7 +1808,7 @@ export default function InvestorDashboard() {
       {/* Pitch Detail Modal */}
       <div className={`modal-backdrop ${isModalOpen ? "open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!isModalOpen} onClick={closePitchModal}>
         {selectedStartup && (
-          <div className="modal glass-card" onClick={(e) => e.stopPropagation()}>
+          <div className="modal glass-card" style={{ maxWidth: modalMode === "pitch" ? "1000px" : "680px", width: "100%" }} onClick={(e) => e.stopPropagation()}>
             {modalMode === "deck" && (
               <button 
                 className="btn-download-pdf" 
@@ -1584,195 +1843,476 @@ export default function InvestorDashboard() {
             </button>
             <div className="modal-content">
               {modalMode === "pitch" && (
-                <>
-                  <div className="modal-header-section" style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "20px" }}>
-                    <div style={{
-                      width: "64px",
-                      height: "64px",
-                      background: selectedStartup.logoBg,
-                      borderRadius: "16px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "1.5rem",
-                      fontWeight: 800,
-                      color: "#ffffff"
-                    }}>
-                      {selectedStartup.logoText}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <h2 style={{ fontSize: "1.85rem", fontWeight: 700, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.5px" }}>
-                        {selectedStartup.name}
-                      </h2>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
-                        <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
-                          {selectedStartup.sectorLabel}
-                        </span>
-                        <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
-                          {selectedStartup.stage}
-                        </span>
-                        <span style={{
-                          background: displayStatus.toLowerCase() === "new" ? "rgba(16, 185, 129, 0.1)" : displayStatus.toLowerCase() === "under review" ? "rgba(245, 158, 11, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                          border: displayStatus.toLowerCase() === "new" ? "1px solid rgba(16, 185, 129, 0.3)" : displayStatus.toLowerCase() === "under review" ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid rgba(59, 130, 246, 0.3)",
-                          color: displayStatus.toLowerCase() === "new" ? "#10b981" : displayStatus.toLowerCase() === "under review" ? "#f59e0b" : "#3b82f6",
-                          padding: "4px 12px",
-                          borderRadius: "100px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.5px"
-                        }}>
-                          {displayStatus}
-                        </span>
+                <div style={{ display: "flex", gap: "24px", flexDirection: "row", flexWrap: "wrap", width: "100%" }}>
+                  {/* Left Panel: 2/3 width */}
+                  <div style={{ flex: "2 1 480px", display: "flex", flexDirection: "column" }}>
+                    <div className="modal-header-section" style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "20px" }}>
+                      <div style={{
+                        width: "64px",
+                        height: "64px",
+                        background: selectedStartup.logoBg,
+                        borderRadius: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        color: "#ffffff"
+                      }}>
+                        {selectedStartup.logoText}
                       </div>
-                      <p style={{ fontSize: "0.95rem", color: "rgba(255, 255, 255, 0.5)", margin: 0, lineHeight: "1.4" }}>
-                        {selectedStartup.tagline}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: "24px" }}>
-                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px", marginTop: 0 }}>
-                      Startup Pitch
-                    </h3>
-                    <p style={{ fontSize: "1rem", color: "rgba(255, 255, 255, 0.7)", lineHeight: "1.6", margin: 0 }}>
-                      {selectedStartup.description}
-                    </p>
-                  </div>
-
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "24px",
-                    background: "rgba(255, 255, 255, 0.015)",
-                    border: "1px solid rgba(255, 255, 255, 0.06)",
-                    borderRadius: "12px",
-                    padding: "20px",
-                    marginBottom: "24px"
-                  }}>
-                    <div>
-                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px" }}>
-                        Funding Ask
-                      </div>
-                      <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>
-                        {formatAskAmount(selectedStartup.ask)}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px" }}>
-                        Submitted Date
-                      </div>
-                      <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#ffffff" }}>
-                        {selectedStartup.submittedDate}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{
-                    background: "rgba(16, 185, 129, 0.02)",
-                    border: "1px solid rgba(16, 185, 129, 0.15)",
-                    borderRadius: "12px",
-                    padding: "20px",
-                    marginBottom: "24px"
-                  }}>
-                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px", marginTop: 0 }}>
-                      Founder Contact Summary
-                    </h3>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
-                      <div>
-                        <h4 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#ffffff", margin: "0 0 4px 0" }}>
-                          {selectedStartup.founder}
-                        </h4>
-                        <p style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", margin: 0 }}>
-                          Founder & CEO, {selectedStartup.name}
+                      <div style={{ flex: 1 }}>
+                        <h2 style={{ fontSize: "1.85rem", fontWeight: 700, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.5px" }}>
+                          {selectedStartup.name}
+                        </h2>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+                          <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
+                            {selectedStartup.sectorLabel}
+                          </span>
+                          <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
+                            {selectedStartup.stage}
+                          </span>
+                          <span style={{
+                            background: displayStatus.toLowerCase() === "new" ? "rgba(16, 185, 129, 0.1)" : displayStatus.toLowerCase() === "under review" ? "rgba(245, 158, 11, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                            border: displayStatus.toLowerCase() === "new" ? "1px solid rgba(16, 185, 129, 0.3)" : displayStatus.toLowerCase() === "under review" ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid rgba(59, 130, 246, 0.3)",
+                            color: displayStatus.toLowerCase() === "new" ? "#10b981" : displayStatus.toLowerCase() === "under review" ? "#f59e0b" : "#3b82f6",
+                            padding: "4px 12px",
+                            borderRadius: "100px",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px"
+                          }}>
+                            {displayStatus}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: "0.95rem", color: "rgba(255, 255, 255, 0.5)", margin: 0, lineHeight: "1.4" }}>
+                          {selectedStartup.tagline}
                         </p>
                       </div>
-                      <div style={{ display: "flex", gap: "10px" }}>
-                        <a href={`mailto:${selectedStartup.email}`} className="founder-btn" style={{
-                          padding: "8px 16px",
-                          background: "rgba(255, 255, 255, 0.03)",
-                          border: "1px solid rgba(255, 255, 255, 0.1)",
-                          borderRadius: "8px",
-                          color: "rgba(255, 255, 255, 0.8)",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          transition: "all var(--transition-fast)"
-                        }}>
-                          <i className="fa-solid fa-envelope"></i>
-                          <span>Email</span>
-                        </a>
-                        <a href={selectedStartup.linkedin} target="_blank" rel="noopener noreferrer" className="founder-btn" style={{
-                          padding: "8px 16px",
-                          background: "rgba(255, 255, 255, 0.03)",
-                          border: "1px solid rgba(255, 255, 255, 0.1)",
-                          borderRadius: "8px",
-                          color: "rgba(255, 255, 255, 0.8)",
-                          textDecoration: "none",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          transition: "all var(--transition-fast)"
-                        }}>
-                          <i className="fa-brands fa-linkedin"></i>
-                          <span>LinkedIn</span>
-                        </a>
+                    </div>
+
+                    <div style={{ marginBottom: "24px" }}>
+                      <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px", marginTop: 0 }}>
+                        Startup Pitch
+                      </h3>
+                      <p style={{ fontSize: "1rem", color: "rgba(255, 255, 255, 0.7)", lineHeight: "1.6", margin: 0 }}>
+                        {selectedStartup.description}
+                      </p>
+                    </div>
+
+                    <div style={{
+                      background: "rgba(16, 185, 129, 0.02)",
+                      border: "1px solid rgba(16, 185, 129, 0.15)",
+                      borderRadius: "12px",
+                      padding: "20px",
+                      marginBottom: "24px"
+                    }}>
+                      <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px", marginTop: 0 }}>
+                        Founder Contact Summary
+                      </h3>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+                        <div>
+                          <h4 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#ffffff", margin: "0 0 4px 0" }}>
+                            {selectedStartup.founder}
+                          </h4>
+                          <p style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", margin: 0 }}>
+                            Founder & CEO, {selectedStartup.name}
+                          </p>
+                        </div>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <a href={`mailto:${selectedStartup.email}`} className="founder-btn" style={{
+                            padding: "8px 16px",
+                            background: "rgba(255, 255, 255, 0.03)",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            borderRadius: "8px",
+                            color: "rgba(255, 255, 255, 0.8)",
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            transition: "all var(--transition-fast)"
+                          }}>
+                            <i className="fa-solid fa-envelope"></i>
+                            <span>Email</span>
+                          </a>
+                          <a href={selectedStartup.linkedin} target="_blank" rel="noopener noreferrer" className="founder-btn" style={{
+                            padding: "8px 16px",
+                            background: "rgba(255, 255, 255, 0.03)",
+                            border: "1px solid rgba(255, 255, 255, 0.1)",
+                            borderRadius: "8px",
+                            color: "rgba(255, 255, 255, 0.8)",
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            transition: "all var(--transition-fast)"
+                          }}>
+                            <i className="fa-brands fa-linkedin"></i>
+                            <span>LinkedIn</span>
+                          </a>
+                        </div>
                       </div>
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "20px" }}>
+                      <button
+                        onClick={() => toggleShortlist(selectedStartup.id)}
+                        className="btn btn-secondary"
+                        style={{
+                          padding: "10px 20px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.15)",
+                          borderRadius: "8px",
+                          color: "rgba(255, 255, 255, 0.9)",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
+                        <span>Shortlist Pitch</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          const text = `Hello StepUp Team,\n\nI would like to request a meeting with the founder of ${selectedStartup.name}.\nInvestor: ${profileData.name}`;
+                          const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
+                          window.open(whatsappUrl, "_blank");
+                        }}
+                        className="btn btn-primary"
+                        style={{
+                          padding: "10px 20px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "0.9rem",
+                          fontWeight: 700,
+                          background: "#10b981",
+                          border: "none",
+                          borderRadius: "8px",
+                          color: "#030712",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <i className="fa-solid fa-calendar-check"></i>
+                        <span>Request a Meeting</span>
+                      </button>
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "20px" }}>
-                    <button
-                      onClick={() => toggleShortlist(selectedStartup.id)}
-                      className="btn btn-secondary"
-                      style={{
-                        padding: "10px 20px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "0.9rem",
-                        fontWeight: 600,
-                        background: "rgba(255, 255, 255, 0.03)",
-                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                        borderRadius: "8px",
-                        color: "rgba(255, 255, 255, 0.9)",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
-                      <span>Shortlist Pitch</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        const text = `Hello StepUp Team,\n\nI would like to request a meeting with the founder of ${selectedStartup.name}.\nInvestor: ${profileData.name}`;
-                        const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
-                        window.open(whatsappUrl, "_blank");
-                      }}
-                      className="btn btn-primary"
-                      style={{
-                        padding: "10px 20px",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        fontSize: "0.9rem",
-                        fontWeight: 700,
-                        background: "#10b981",
-                        border: "none",
-                        borderRadius: "8px",
-                        color: "#030712",
-                        cursor: "pointer"
-                      }}
-                    >
-                      <i className="fa-solid fa-calendar-check"></i>
-                      <span>Request a Meeting</span>
-                    </button>
+                  {/* Right Sidebar Panel: 1/3 width */}
+                  <div style={{ flex: "1 1 280px", borderLeft: "1px solid rgba(255, 255, 255, 0.08)", paddingLeft: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+                    {/* Tab Navigation */}
+                    <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px", padding: "3px", border: "1px solid rgba(255, 255, 255, 0.06)", justifyContent: "space-between" }}>
+                      {[
+                        { id: "overview", label: "Overview" },
+                        { id: "dataroom", label: "Data Room" },
+                        { id: "captable", label: "Cap Table" },
+                        { id: "notes", label: "Notes" }
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as any)}
+                          style={{
+                            flex: 1,
+                            padding: "6px 2px",
+                            borderRadius: "6px",
+                            border: "none",
+                            fontSize: "0.75rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all var(--transition-fast)",
+                            background: activeTab === tab.id ? "#10b981" : "transparent",
+                            color: activeTab === tab.id ? "#030712" : "rgba(255, 255, 255, 0.6)"
+                          }}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Tab Content Area */}
+                    <div style={{ flex: 1, transition: "all 0.3s ease" }}>
+                      {/* Overview Tab Content */}
+                      {activeTab === "overview" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                          {/* Metrics (Funding Ask, Date) */}
+                          <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: "16px",
+                            background: "rgba(255, 255, 255, 0.015)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: "12px",
+                            padding: "16px"
+                          }}>
+                            <div>
+                              <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px" }}>
+                                Funding Ask
+                              </div>
+                              <div style={{ fontSize: "1.3rem", fontWeight: 800, color: "#10b981" }}>
+                                {formatAskAmount(selectedStartup.ask)}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px" }}>
+                                Submitted Date
+                              </div>
+                              <div style={{ fontSize: "1.3rem", fontWeight: 800, color: "#ffffff" }}>
+                                {selectedStartup.submittedDate}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Round Allocation Tracker */}
+                          <div style={{
+                            background: "rgba(255, 255, 255, 0.015)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: "12px",
+                            padding: "16px"
+                          }}>
+                            <h4 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "12px", marginTop: 0 }}>
+                              Round Allocation Tracker
+                            </h4>
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                              <div style={{ position: "relative", width: "56px", height: "56px", flexShrink: 0 }}>
+                                <svg width="56" height="56" viewBox="0 0 56 56">
+                                  <circle cx="28" cy="28" r="23" fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="5" />
+                                  <circle cx="28" cy="28" r="23" fill="transparent" stroke="url(#emeraldTealGrad)" strokeWidth="5"
+                                          strokeDasharray="144.5" strokeDashoffset={144.5 * (1 - 0.6)} strokeLinecap="round" transform="rotate(-90 28 28)" />
+                                  <defs>
+                                    <linearGradient id="emeraldTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                      <stop offset="0%" stopColor="#10b981" />
+                                      <stop offset="100%" stopColor="#14b8a6" />
+                                    </linearGradient>
+                                  </defs>
+                                </svg>
+                                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", fontSize: "0.8rem", fontWeight: 700, color: "#ffffff" }}>
+                                  60%
+                                </div>
+                              </div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                <span style={{ fontSize: "0.8rem", color: "#ffffff", fontWeight: 500 }}>
+                                  <strong style={{ color: "#10b981" }}>{formatLakhs(selectedStartup.ask * 0.6)}</strong> Committed
+                                </span>
+                                <span style={{ fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.4)" }}>
+                                  {formatLakhs(selectedStartup.ask * 0.4)} Remaining
+                                </span>
+                                <span style={{ fontSize: "0.65rem", color: "#10b981", fontWeight: 600, marginTop: "2px" }}>
+                                  3 Vetted Angels Committed
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Scorecard Widget */}
+                          <div style={{
+                            background: "rgba(255, 255, 255, 0.015)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: "12px",
+                            padding: "16px"
+                          }}>
+                            <h4 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "16px", marginTop: 0 }}>
+                              Team Scorecard
+                            </h4>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                              {[
+                                { key: "pedigree", label: "Founder Pedigree", value: (startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).pedigree },
+                                { key: "tailwinds", label: "Market Tailwinds", value: (startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).tailwinds },
+                                { key: "moat", label: "Product Moat", value: (startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).moat }
+                              ].map(metric => (
+                                <div key={metric.key} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                  <div style={{ display: "flex", justifyBetween: "space-between", fontSize: "0.75rem", display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ color: "rgba(255, 255, 255, 0.7)" }}>{metric.label}</span>
+                                    <span style={{ color: "#10b981", fontWeight: 700 }}>{metric.value.toFixed(1)} / 5.0</span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={metric.value}
+                                    onChange={(e) => updateRating(selectedStartup.id, metric.key as any, parseFloat(e.target.value))}
+                                    className="scorecard-slider"
+                                    style={{ width: "100%", cursor: "pointer" }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Conviction Indicator */}
+                            <div className="glass-card" style={{
+                              marginTop: "16px",
+                              padding: "12px",
+                              borderRadius: "8px",
+                              border: "1px solid rgba(16, 185, 129, 0.25)",
+                              background: "rgba(16, 185, 129, 0.05)",
+                              textAlign: "center",
+                              boxShadow: "0 0 15px rgba(16, 185, 129, 0.1)"
+                            }}>
+                              <div style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "#10b981", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px" }}>
+                                Total Conviction Score
+                              </div>
+                              <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "#ffffff", textShadow: "0 0 10px rgba(16, 185, 129, 0.4)" }}>
+                                {((((startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).pedigree +
+                                    (startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).tailwinds +
+                                    (startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 }).moat) / 3)).toFixed(1)} / 5
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Data Room Tab Content */}
+                      {activeTab === "dataroom" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                          <h4 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px", marginTop: 0 }}>
+                            Available Assets
+                          </h4>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {[
+                              { name: `${selectedStartup.name}_PitchDeck_v2.pdf`, size: "4.2 MB", type: "pdf" },
+                              { name: `${selectedStartup.name}_Financials.xlsx`, size: "1.8 MB", type: "excel" },
+                              { name: `${selectedStartup.name}_CapTable.xlsx`, size: "920 KB", type: "excel" },
+                              { name: `${selectedStartup.name}_OnePager.pdf`, size: "1.1 MB", type: "pdf" }
+                            ].map((asset, idx) => (
+                              <div key={idx} style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "10px 12px",
+                                background: "rgba(255,255,255,0.015)",
+                                border: "1px solid rgba(255,255,255,0.05)",
+                                borderRadius: "8px",
+                                fontSize: "0.8rem"
+                              }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                                  {asset.type === "pdf" ? (
+                                    <i className="fa-solid fa-file-pdf" style={{ color: "#ef4444", fontSize: "1rem" }}></i>
+                                  ) : (
+                                    <i className="fa-solid fa-file-excel" style={{ color: "#10b981", fontSize: "1rem" }}></i>
+                                  )}
+                                  <span style={{
+                                    color: "rgba(255, 255, 255, 0.8)",
+                                    fontWeight: 500,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap"
+                                  }} title={asset.name}>
+                                    {asset.name}
+                                  </span>
+                                </div>
+                                <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.75rem", flexShrink: 0, marginLeft: "8px" }}>
+                                  {asset.size}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={() => showToast("Downloading all assets as a ZIP archive...", "info")}
+                            className="btn btn-secondary"
+                            style={{
+                              marginTop: "8px",
+                              padding: "10px",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              background: "rgba(255,255,255,0.03)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "8px",
+                              color: "#ffffff"
+                            }}
+                          >
+                            <i className="fa-solid fa-file-archive" style={{ color: "#eab308" }}></i>
+                            <span>Download All Assets (.zip)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Cap Table Tab Content */}
+                      {activeTab === "captable" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                          <h4 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px", marginTop: 0 }}>
+                            Equity Distribution
+                          </h4>
+                          <div style={{
+                            background: "rgba(255,255,255,0.015)",
+                            border: "1px solid rgba(255,255,255,0.05)",
+                            borderRadius: "10px",
+                            overflow: "hidden"
+                          }}>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", textAlign: "left" }}>
+                              <thead>
+                                <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                                  <th style={{ padding: "8px 12px", color: "rgba(255,255,255,0.5)" }}>Shareholder</th>
+                                  <th style={{ padding: "8px 12px", color: "rgba(255,255,255,0.5)", textAlign: "right" }}>Equity</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {[
+                                  { role: "Founders & Team", pct: "65.0%" },
+                                  { role: "Angel Investors", pct: "15.0%" },
+                                  { role: "Option Pool (ESOP)", pct: "15.0%" },
+                                  { role: "Advisors", pct: "5.0%" }
+                                ].map((row, index) => (
+                                  <tr key={index} style={{ borderBottom: index < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                                    <td style={{ padding: "8px 12px", color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>{row.role}</td>
+                                    <td style={{ padding: "8px 12px", color: "#10b981", fontWeight: 700, textAlign: "right" }}>{row.pct}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", lineHeight: "1.3" }}>
+                            * Dilution projection modeled post-current Seed round completion. Class A common stock terms apply.
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Notes Tab Content */}
+                      {activeTab === "notes" && (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px", height: "100%" }}>
+                          <h4 style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "4px", marginTop: 0 }}>
+                            Internal Diligence Notes
+                          </h4>
+                          <textarea
+                            value={startupNotes[selectedStartup.id] || ""}
+                            onChange={(e) => updateNotes(selectedStartup.id, e.target.value)}
+                            placeholder="Type investment thesis, follow-up questions, or risk analysis. Auto-saves locally..."
+                            style={{
+                              width: "100%",
+                              height: "180px",
+                              background: "rgba(255,255,255,0.015)",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                              borderRadius: "8px",
+                              padding: "10px",
+                              color: "#ffffff",
+                              fontSize: "0.8rem",
+                              fontFamily: "inherit",
+                              resize: "none",
+                              outline: "none"
+                            }}
+                          />
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.65rem", color: "#10b981" }}>
+                            <i className="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Saved in localStorage</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </>
+                </div>
               )}
 
               {modalMode === "deck" && (
