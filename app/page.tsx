@@ -271,7 +271,7 @@ export default function InvestorDashboard() {
 
   // Modal State
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
-  const [modalMode, setModalMode] = useState<"pitch" | "contact">("pitch");
+  const [modalMode, setModalMode] = useState<"pitch" | "contact" | "deck">("pitch");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -847,7 +847,7 @@ export default function InvestorDashboard() {
   const filteredPitches = getFilteredPitches();
 
   // Modal controllers
-  const openPitchModal = (startup: Startup, mode: "pitch" | "contact") => {
+  const openPitchModal = (startup: Startup, mode: "pitch" | "contact" | "deck") => {
     setSelectedStartup(startup);
     setModalMode(mode);
     setCurrentSlide(0);
@@ -1071,6 +1071,13 @@ export default function InvestorDashboard() {
     }
   ] : [];
 
+  const isShortlisted = selectedStartup ? shortlistedIds.includes(selectedStartup.id) : false;
+  let displayStatus = selectedStartup ? selectedStartup.status : "";
+  if (selectedStartup && isShortlisted) {
+    displayStatus = "Shortlisted";
+  }
+  const badgeClass = displayStatus.toLowerCase().replace(/\s+/g, "-");
+
   return (
     <div className="app-container">
       {/* Mobile Sidebar Backdrop Overlay */}
@@ -1241,25 +1248,25 @@ export default function InvestorDashboard() {
               {/* Pitch Card Grid */}
               <div className="pitch-grid" id="pitchGrid">
                 {filteredPitches.map(startup => {
-                  const isShortlisted = shortlistedIds.includes(startup.id);
+                  const isStartupShortlisted = shortlistedIds.includes(startup.id);
 
-                  let displayStatus = startup.status;
-                  if (isShortlisted) {
-                    displayStatus = "Shortlisted";
+                  let startupDisplayStatus = startup.status;
+                  if (isStartupShortlisted) {
+                    startupDisplayStatus = "Shortlisted";
                   } else if (startup.status === "Shortlisted") {
-                    displayStatus = "Under Review";
+                    startupDisplayStatus = "Under Review";
                   }
 
-                  let badgeClass = "new";
-                  if (displayStatus === "Under Review") badgeClass = "review";
-                  if (displayStatus === "Shortlisted") badgeClass = "shortlisted";
+                  let startupBadgeClass = "new";
+                  if (startupDisplayStatus === "Under Review") startupBadgeClass = "review";
+                  if (startupDisplayStatus === "Shortlisted") startupBadgeClass = "shortlisted";
 
                   return (
                     <article className="pitch-card glass-card" key={startup.id} tabIndex={0} aria-label={`${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`}>
                       <div className="card-main-info">
                         <div className="card-title-row">
                           <h3>{startup.name}</h3>
-                          <span className={`status-badge ${badgeClass}`}>{displayStatus}</span>
+                          <span className={`status-badge ${startupBadgeClass}`}>{startupDisplayStatus}</span>
                         </div>
                         <p className="card-tagline">{startup.tagline}</p>
                         <div className="card-tags">
@@ -1291,7 +1298,7 @@ export default function InvestorDashboard() {
                         <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
                           <button 
                             className="btn-pitch-deck-action" 
-                            onClick={() => openPitchModal(startup, "pitch")}
+                            onClick={() => openPitchModal(startup, "deck")}
                             style={{
                               padding: "6px 12px",
                               borderRadius: "8px",
@@ -1310,8 +1317,8 @@ export default function InvestorDashboard() {
                             <i className="fa-solid fa-file-pdf"></i>
                             <span>Pitch Deck</span>
                           </button>
-                          <button className={`bookmark-btn ${isShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
-                            <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
+                          <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isStartupShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isStartupShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
+                            <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
                           </button>
                         </div>
                       </div>
@@ -1543,7 +1550,7 @@ export default function InvestorDashboard() {
       <div className={`modal-backdrop ${isModalOpen ? "open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!isModalOpen} onClick={closePitchModal}>
         {selectedStartup && (
           <div className="modal glass-card" onClick={(e) => e.stopPropagation()}>
-            {modalMode === "pitch" && (
+            {modalMode === "deck" && (
               <button 
                 className="btn-download-pdf" 
                 onClick={handleDownloadPDF} 
@@ -1576,7 +1583,199 @@ export default function InvestorDashboard() {
               <i className="fa-solid fa-xmark"></i>
             </button>
             <div className="modal-content">
-              {modalMode === "pitch" ? (
+              {modalMode === "pitch" && (
+                <>
+                  <div className="modal-header-section" style={{ display: "flex", gap: "20px", alignItems: "flex-start", marginBottom: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", paddingBottom: "20px" }}>
+                    <div style={{
+                      width: "64px",
+                      height: "64px",
+                      background: selectedStartup.logoBg,
+                      borderRadius: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      color: "#ffffff"
+                    }}>
+                      {selectedStartup.logoText}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <h2 style={{ fontSize: "1.85rem", fontWeight: 700, color: "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.5px" }}>
+                        {selectedStartup.name}
+                      </h2>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+                        <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
+                          {selectedStartup.sectorLabel}
+                        </span>
+                        <span style={{ background: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)", padding: "4px 12px", borderRadius: "100px", fontSize: "0.75rem", color: "rgba(255, 255, 255, 0.7)", fontWeight: 500 }}>
+                          {selectedStartup.stage}
+                        </span>
+                        <span style={{
+                          background: displayStatus.toLowerCase() === "new" ? "rgba(16, 185, 129, 0.1)" : displayStatus.toLowerCase() === "under review" ? "rgba(245, 158, 11, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                          border: displayStatus.toLowerCase() === "new" ? "1px solid rgba(16, 185, 129, 0.3)" : displayStatus.toLowerCase() === "under review" ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid rgba(59, 130, 246, 0.3)",
+                          color: displayStatus.toLowerCase() === "new" ? "#10b981" : displayStatus.toLowerCase() === "under review" ? "#f59e0b" : "#3b82f6",
+                          padding: "4px 12px",
+                          borderRadius: "100px",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px"
+                        }}>
+                          {displayStatus}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: "0.95rem", color: "rgba(255, 255, 255, 0.5)", margin: 0, lineHeight: "1.4" }}>
+                        {selectedStartup.tagline}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: "24px" }}>
+                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px", marginTop: 0 }}>
+                      Startup Pitch
+                    </h3>
+                    <p style={{ fontSize: "1rem", color: "rgba(255, 255, 255, 0.7)", lineHeight: "1.6", margin: 0 }}>
+                      {selectedStartup.description}
+                    </p>
+                  </div>
+
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "24px",
+                    background: "rgba(255, 255, 255, 0.015)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    borderRadius: "12px",
+                    padding: "20px",
+                    marginBottom: "24px"
+                  }}>
+                    <div>
+                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px" }}>
+                        Funding Ask
+                      </div>
+                      <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>
+                        {formatAskAmount(selectedStartup.ask)}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: "0.75rem", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.5)", fontWeight: 700, letterSpacing: "0.5px", marginBottom: "8px" }}>
+                        Submitted Date
+                      </div>
+                      <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#ffffff" }}>
+                        {selectedStartup.submittedDate}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: "rgba(16, 185, 129, 0.02)",
+                    border: "1px solid rgba(16, 185, 129, 0.15)",
+                    borderRadius: "12px",
+                    padding: "20px",
+                    marginBottom: "24px"
+                  }}>
+                    <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#10b981", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px", marginTop: 0 }}>
+                      Founder Contact Summary
+                    </h3>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+                      <div>
+                        <h4 style={{ fontSize: "1.15rem", fontWeight: 700, color: "#ffffff", margin: "0 0 4px 0" }}>
+                          {selectedStartup.founder}
+                        </h4>
+                        <p style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.85rem", margin: 0 }}>
+                          Founder & CEO, {selectedStartup.name}
+                        </p>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <a href={`mailto:${selectedStartup.email}`} className="founder-btn" style={{
+                          padding: "8px 16px",
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                          color: "rgba(255, 255, 255, 0.8)",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          transition: "all var(--transition-fast)"
+                        }}>
+                          <i className="fa-solid fa-envelope"></i>
+                          <span>Email</span>
+                        </a>
+                        <a href={selectedStartup.linkedin} target="_blank" rel="noopener noreferrer" className="founder-btn" style={{
+                          padding: "8px 16px",
+                          background: "rgba(255, 255, 255, 0.03)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: "8px",
+                          color: "rgba(255, 255, 255, 0.8)",
+                          textDecoration: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "0.85rem",
+                          fontWeight: 600,
+                          transition: "all var(--transition-fast)"
+                        }}>
+                          <i className="fa-brands fa-linkedin"></i>
+                          <span>LinkedIn</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "20px" }}>
+                    <button
+                      onClick={() => toggleShortlist(selectedStartup.id)}
+                      className="btn btn-secondary"
+                      style={{
+                        padding: "10px 20px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "0.9rem",
+                        fontWeight: 600,
+                        background: "rgba(255, 255, 255, 0.03)",
+                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                        borderRadius: "8px",
+                        color: "rgba(255, 255, 255, 0.9)",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
+                      <span>Shortlist Pitch</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const text = `Hello StepUp Team,\n\nI would like to request a meeting with the founder of ${selectedStartup.name}.\nInvestor: ${profileData.name}`;
+                        const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
+                        window.open(whatsappUrl, "_blank");
+                      }}
+                      className="btn btn-primary"
+                      style={{
+                        padding: "10px 20px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        fontSize: "0.9rem",
+                        fontWeight: 700,
+                        background: "#10b981",
+                        border: "none",
+                        borderRadius: "8px",
+                        color: "#030712",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <i className="fa-solid fa-calendar-check"></i>
+                      <span>Request a Meeting</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {modalMode === "deck" && (
                 <div className="pitch-deck-viewer" style={{ minHeight: "400px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   {/* Active Slide content */}
                   <div style={{ flex: 1, display: "flex", alignItems: "center", minHeight: "280px" }}>
@@ -1625,7 +1824,9 @@ export default function InvestorDashboard() {
                     </button>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {modalMode === "contact" && (
                 <>
                   <div className="modal-header-section">
                     <div className="modal-brand">
