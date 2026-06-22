@@ -1959,7 +1959,7 @@ export default function InvestorDashboard() {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "20px" }}>
+                    <div style={{ display: "flex", justifyContent: "flex-end", borderTop: "1px solid rgba(255, 255, 255, 0.08)", paddingTop: "20px" }}>
                       <button
                         onClick={() => toggleShortlist(selectedStartup.id)}
                         className="btn btn-secondary"
@@ -1979,30 +1979,6 @@ export default function InvestorDashboard() {
                       >
                         <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
                         <span>Shortlist Pitch</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const text = `Hello StepUp Team,\n\nI would like to request a meeting with the founder of ${selectedStartup.name}.\nInvestor: ${profileData.name}`;
-                          const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
-                          window.open(whatsappUrl, "_blank");
-                        }}
-                        className="btn btn-primary"
-                        style={{
-                          padding: "10px 20px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          fontSize: "0.9rem",
-                          fontWeight: 700,
-                          background: "#10b981",
-                          border: "none",
-                          borderRadius: "8px",
-                          color: "#030712",
-                          cursor: "pointer"
-                        }}
-                      >
-                        <i className="fa-solid fa-calendar-check"></i>
-                        <span>Request a Meeting</span>
                       </button>
                     </div>
                   </div>
