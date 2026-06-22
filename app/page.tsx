@@ -282,8 +282,7 @@ export default function InvestorDashboard() {
   // Sidebar Mobile State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // New Deal Room, Kanban, and Rating state variables
-  const [dashboardView, setDashboardView] = useState<"list" | "pipeline">("list");
+  // New Deal Room and Rating state variables
   const [activeTab, setActiveTab] = useState<"overview" | "dataroom" | "captable" | "notes">("overview");
   const [startupRatings, setStartupRatings] = useState<Record<string, { pedigree: number; tailwinds: number; moat: number }>>({});
   const [startupNotes, setStartupNotes] = useState<Record<string, string>>({});
@@ -890,47 +889,6 @@ export default function InvestorDashboard() {
 
   const filteredPitches = getFilteredPitches();
 
-  const getPipelineColumns = () => {
-    const newInbound: Startup[] = [];
-    const introCall: Startup[] = [];
-    const dueDiligence: Startup[] = [];
-    const shortlisted: Startup[] = [];
-
-    filteredPitches.forEach(startup => {
-      if (shortlistedIds.includes(startup.id)) {
-        shortlisted.push(startup);
-      } else {
-        switch (startup.id) {
-          case "apex-ai":
-          case "solarloop":
-          case "neurocare":
-          case "promptcraft":
-            newInbound.push(startup);
-            break;
-          case "wealthstream":
-          case "learnsphere":
-            introCall.push(startup);
-            break;
-          case "paychain":
-          case "saasify":
-            dueDiligence.push(startup);
-            break;
-          default:
-            if (startup.status === "New") {
-              newInbound.push(startup);
-            } else if (startup.status === "Shortlisted") {
-              shortlisted.push(startup);
-            } else {
-              introCall.push(startup);
-            }
-            break;
-        }
-      }
-    });
-
-    return { newInbound, introCall, dueDiligence, shortlisted };
-  };
-
   // Modal controllers
   const openPitchModal = (startup: Startup, mode: "pitch" | "contact" | "deck") => {
     setSelectedStartup(startup);
@@ -1331,260 +1289,93 @@ export default function InvestorDashboard() {
                 </div>
               </div>
 
-              {/* View Selector Header Row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)", paddingBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)", paddingBottom: "16px" }}>
                 <span className="results-count" id="resultsCount" style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
                   {filteredPitches.length} Startups Found
                 </span>
-                
-                {/* Segmented Controller */}
-                <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px", padding: "3px", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                  <button
-                    onClick={() => setDashboardView("list")}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.2s",
-                      background: dashboardView === "list" ? "#10b981" : "transparent",
-                      color: dashboardView === "list" ? "#030712" : "rgba(255, 255, 255, 0.6)"
-                    }}
-                  >
-                    <i className="fa-solid fa-list"></i>
-                    <span>List View</span>
-                  </button>
-                  <button
-                    onClick={() => setDashboardView("pipeline")}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "all 0.2s",
-                      background: dashboardView === "pipeline" ? "#10b981" : "transparent",
-                      color: dashboardView === "pipeline" ? "#030712" : "rgba(255, 255, 255, 0.6)"
-                    }}
-                  >
-                    <i className="fa-solid fa-table-columns"></i>
-                    <span>Pipeline Board</span>
-                  </button>
-                </div>
               </div>
 
-              {dashboardView === "list" ? (
-                /* Pitch Card Grid */
-                <div className="pitch-grid" id="pitchGrid">
-                  {filteredPitches.map(startup => {
-                    const isStartupShortlisted = shortlistedIds.includes(startup.id);
+              {/* Pitch Card Grid */}
+              <div className="pitch-grid" id="pitchGrid">
+                {filteredPitches.map(startup => {
+                  const isStartupShortlisted = shortlistedIds.includes(startup.id);
 
-                    let startupDisplayStatus = startup.status;
-                    if (isStartupShortlisted) {
-                      startupDisplayStatus = "Shortlisted";
-                    } else if (startup.status === "Shortlisted") {
-                      startupDisplayStatus = "Under Review";
-                    }
+                  let startupDisplayStatus = startup.status;
+                  if (isStartupShortlisted) {
+                    startupDisplayStatus = "Shortlisted";
+                  } else if (startup.status === "Shortlisted") {
+                    startupDisplayStatus = "Under Review";
+                  }
 
-                    let startupBadgeClass = "new";
-                    if (startupDisplayStatus === "Under Review") startupBadgeClass = "review";
-                    if (startupDisplayStatus === "Shortlisted") startupBadgeClass = "shortlisted";
+                  let startupBadgeClass = "new";
+                  if (startupDisplayStatus === "Under Review") startupBadgeClass = "review";
+                  if (startupDisplayStatus === "Shortlisted") startupBadgeClass = "shortlisted";
 
-                    return (
-                      <article className="pitch-card glass-card" key={startup.id} tabIndex={0} aria-label={`${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`}>
-                        <div className="card-main-info">
-                          <div className="card-title-row">
-                            <h3>{startup.name}</h3>
-                            <span className={`status-badge ${startupBadgeClass}`}>{startupDisplayStatus}</span>
-                          </div>
-                          <p className="card-tagline">{startup.tagline}</p>
-                          <div className="card-tags">
-                            <span className="tag">{startup.sectorLabel}</span>
-                            <span className="tag">{startup.stage}</span>
-                          </div>
+                  return (
+                    <article className="pitch-card glass-card" key={startup.id} tabIndex={0} aria-label={`${startup.name} startup card. Sector: ${startup.sectorLabel}. Stage: ${startup.stage}. Funding Ask: ${formatAskAmount(startup.ask)}`}>
+                      <div className="card-main-info">
+                        <div className="card-title-row">
+                          <h3>{startup.name}</h3>
+                          <span className={`status-badge ${startupBadgeClass}`}>{startupDisplayStatus}</span>
                         </div>
-
-                        <div className="card-metrics-col">
-                          <div className="metric-label">Funding Ask</div>
-                          <div className="metric-value">{formatAskAmount(startup.ask)}</div>
-                          <span className="submission-date">Submitted: {startup.submittedDate}</span>
+                        <p className="card-tagline">{startup.tagline}</p>
+                        <div className="card-tags">
+                          <span className="tag">{startup.sectorLabel}</span>
+                          <span className="tag">{startup.stage}</span>
                         </div>
-
-                        <div className="card-actions-col">
-                          <div className="card-checkboxes">
-                            <label className="custom-checkbox">
-                              <input type="checkbox" className="cb-view-pitch" checked={selectedStartup?.id === startup.id && modalMode === "pitch" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "pitch"); else closePitchModal(); }} aria-label="Check to view full pitch details" />
-                              <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
-                              <span className="checkbox-label">More Details</span>
-                            </label>
-                            <label className="custom-checkbox">
-                              <input type="checkbox" className="cb-view-contact" checked={selectedStartup?.id === startup.id && modalMode === "contact" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "contact"); else closePitchModal(); }} aria-label="Check to view owner contact details" />
-                              <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
-                              <span className="checkbox-label">Contact Details</span>
-                            </label>
-                          </div>
-                          
-                          <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                            <button 
-                              className="btn-pitch-deck-action" 
-                              onClick={() => openPitchModal(startup, "deck")}
-                              style={{
-                                padding: "6px 12px",
-                                borderRadius: "8px",
-                                background: "rgba(47, 191, 100, 0.1)",
-                                border: "1px solid rgba(47, 191, 100, 0.2)",
-                                color: "var(--accent)",
-                                fontSize: "0.8rem",
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                transition: "all var(--transition-fast)"
-                              }}
-                            >
-                              <i className="fa-solid fa-file-pdf"></i>
-                              <span>Pitch Deck</span>
-                            </button>
-                            <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isStartupShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isStartupShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
-                              <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
-                            </button>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              ) : (
-                /* Pipeline Kanban Board View */
-                <div style={{ display: "flex", gap: "16px", overflowX: "auto", paddingBottom: "16px", alignItems: "flex-start", width: "100%" }}>
-                  {[
-                    { id: "new", title: "New Inbound", color: "#3b82f6", items: getPipelineColumns().newInbound },
-                    { id: "intro", title: "Intro Call", color: "#f59e0b", items: getPipelineColumns().introCall },
-                    { id: "diligence", title: "Due Diligence", color: "#8b5cf6", items: getPipelineColumns().dueDiligence },
-                    { id: "shortlisted", title: "Shortlisted", color: "#10b981", items: getPipelineColumns().shortlisted }
-                  ].map(column => (
-                    <div key={column.id} style={{
-                      flex: "1 1 0px",
-                      minWidth: "255px",
-                      background: "rgba(3, 7, 18, 0.4)",
-                      border: "1px solid rgba(255, 255, 255, 0.05)",
-                      borderRadius: "16px",
-                      padding: "16px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "14px",
-                      maxHeight: "750px",
-                      overflow: "hidden"
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "10px", marginBottom: "4px" }}>
-                        <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#ffffff", margin: 0, display: "flex", alignItems: "center", gap: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: column.color }} />
-                          {column.title}
-                        </h3>
-                        <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.05)", padding: "2px 8px", borderRadius: "10px", color: "rgba(255, 255, 255, 0.6)", fontWeight: 600 }}>
-                          {column.items.length}
-                        </span>
                       </div>
-                      
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", paddingRight: "4px", minHeight: "100px" }}>
-                        {column.items.length === 0 ? (
-                          <div style={{ padding: "30px 10px", textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: "0.75rem", border: "1px dashed rgba(255,255,255,0.05)", borderRadius: "8px" }}>
-                            No deals in this stage
-                          </div>
-                        ) : (
-                          column.items.map(startup => {
-                            const isStartupShortlisted = shortlistedIds.includes(startup.id);
-                            return (
-                              <div key={startup.id} className="glass-card" style={{
-                                padding: "16px",
-                                borderRadius: "12px",
-                                border: "1px solid rgba(255, 255, 255, 0.05)",
-                                background: "rgba(255, 255, 255, 0.015)",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "10px"
-                              }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
-                                  <h4 style={{ fontSize: "0.95rem", fontWeight: 700, color: "#ffffff", margin: 0 }}>{startup.name}</h4>
-                                  <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} style={{ padding: "4px", minWidth: "auto", height: "auto", background: "transparent", border: "none", cursor: "pointer" }}>
-                                    <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`} style={{ fontSize: "0.85rem", color: isStartupShortlisted ? "#10b981" : "rgba(255,255,255,0.4)" }}></i>
-                                  </button>
-                                </div>
-                                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                                  <span style={{ fontSize: "0.65rem", padding: "2px 6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px", color: "rgba(255,255,255,0.5)" }}>{startup.sectorLabel}</span>
-                                  <span style={{ fontSize: "0.65rem", padding: "2px 6px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px", color: "rgba(255,255,255,0.5)" }}>{startup.stage}</span>
-                                </div>
-                                <p style={{
-                                  fontSize: "0.75rem",
-                                  color: "rgba(255, 255, 255, 0.5)",
-                                  margin: 0,
-                                  lineClamp: 2,
-                                  display: "-webkit-box",
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: "vertical",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  lineHeight: "1.4"
-                                }}>
-                                  {startup.tagline}
-                                </p>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "10px", marginTop: "4px" }}>
-                                  <div>
-                                    <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Ask</div>
-                                    <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#10b981" }}>{formatAskAmount(startup.ask)}</div>
-                                  </div>
-                                  <div style={{ display: "flex", gap: "6px" }}>
-                                    <button 
-                                      onClick={() => openPitchModal(startup, "pitch")}
-                                      style={{
-                                        padding: "4px 8px",
-                                        borderRadius: "6px",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        background: "rgba(255,255,255,0.03)",
-                                        color: "#ffffff",
-                                        fontSize: "0.7rem",
-                                        fontWeight: 600,
-                                        cursor: "pointer"
-                                      }}
-                                    >
-                                      Details
-                                    </button>
-                                    <button 
-                                      onClick={() => openPitchModal(startup, "deck")}
-                                      style={{
-                                        padding: "4px 8px",
-                                        borderRadius: "6px",
-                                        background: "rgba(47, 191, 100, 0.1)",
-                                        border: "1px solid rgba(47, 191, 100, 0.2)",
-                                        color: "var(--accent)",
-                                        fontSize: "0.7rem",
-                                        fontWeight: 600,
-                                        cursor: "pointer"
-                                      }}
-                                    >
-                                      Deck
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
+
+                      <div className="card-metrics-col">
+                        <div className="metric-label">Funding Ask</div>
+                        <div className="metric-value">{formatAskAmount(startup.ask)}</div>
+                        <span className="submission-date">Submitted: {startup.submittedDate}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+
+                      <div className="card-actions-col">
+                        <div className="card-checkboxes">
+                          <label className="custom-checkbox">
+                            <input type="checkbox" className="cb-view-pitch" checked={selectedStartup?.id === startup.id && modalMode === "pitch" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "pitch"); else closePitchModal(); }} aria-label="Check to view full pitch details" />
+                            <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
+                            <span className="checkbox-label">More Details</span>
+                          </label>
+                          <label className="custom-checkbox">
+                            <input type="checkbox" className="cb-view-contact" checked={selectedStartup?.id === startup.id && modalMode === "contact" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "contact"); else closePitchModal(); }} aria-label="Check to view owner contact details" />
+                            <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
+                            <span className="checkbox-label">Contact Details</span>
+                          </label>
+                        </div>
+                        
+                        <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <button 
+                            className="btn-pitch-deck-action" 
+                            onClick={() => openPitchModal(startup, "deck")}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              background: "rgba(47, 191, 100, 0.1)",
+                              border: "1px solid rgba(47, 191, 100, 0.2)",
+                              color: "var(--accent)",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              transition: "all var(--transition-fast)"
+                            }}
+                          >
+                            <i className="fa-solid fa-file-pdf"></i>
+                            <span>Pitch Deck</span>
+                          </button>
+                          <button className={`bookmark-btn ${isStartupShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isStartupShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isStartupShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
+                            <i className={`fa-${isStartupShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
 
               {/* Empty State */}
               {filteredPitches.length === 0 && (
