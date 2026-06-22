@@ -273,6 +273,7 @@ export default function InvestorDashboard() {
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [modalMode, setModalMode] = useState<"pitch" | "contact">("pitch");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   // Toasts State
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -327,6 +328,357 @@ export default function InvestorDashboard() {
     setShortlistedIds(newShortlist);
     localStorage.setItem("stepup_shortlist", JSON.stringify(newShortlist));
     showToast(shortlistedIds.includes(id) ? "Removed from Shortlist." : "Added to Shortlist!", shortlistedIds.includes(id) ? "info" : "success");
+  };
+
+  const getPitchDeckDetails = (startup: Startup) => {
+    const name = startup.name;
+    const sector = startup.sectorLabel;
+    const stage = startup.stage;
+    const ask = formatAskAmount(startup.ask);
+    
+    let problem = "";
+    let solution = "";
+    let businessModel = "";
+    let advantage = "";
+    let financialProjections = "";
+    let askDetails = "";
+
+    if (startup.id === "apex-ai") {
+      problem = "Enterprises waste thousands of hours manually fetching, analyzing, and reporting operations data due to fragmented legacy tools.";
+      solution = "Autonomous software agents that integrate with enterprise tools to automate data retrieval, processing, and reporting with zero human overhead.";
+      businessModel = "B2B SaaS subscription starting at $499/month per agent, plus enterprise custom usage tiers.";
+      advantage = "Proprietary multi-agent orchestration engine that prevents LLM hallucinations and maintains 99.9% uptime.";
+      financialProjections = "Projecting $2.4M ARR by Year 2, reaching break-even point in month 14.";
+      askDetails = `Raising ${ask} Seed funding to hire 3 AI engineers, expand sales operations, and hit $1.5M ARR milestone.`;
+    } else if (startup.id === "wealthstream") {
+      problem = "Gig-economy workers lack structured savings plans, pensions, and medical insurance due to variable earnings.";
+      solution = "An automated micro-investing platform that rounds up gig platform payouts directly into customized portfolios and benefit accounts.";
+      businessModel = "0.25% annual management fee on assets under management (AUM) + $2 monthly subscription.";
+      advantage = "Direct API integration with Uber, DoorDash, and Upwork for seamless real-time transaction processing.";
+      financialProjections = "Targeting $150M AUM by Year 3, cash-flow positive by month 18.";
+      askDetails = `Raising ${ask} Pre-seed funding to secure regulatory licenses, expand support teams, and onboard 50k users.`;
+    } else if (startup.id === "bioscribe") {
+      problem = "Doctors spend over 3 hours daily typing consultation notes, leading to physician burnout and reduced patient time.";
+      solution = "A clinical-grade AI medical scribe that listens to dialogue and generates EHR-compliant reports instantly.";
+      businessModel = "SaaS license fee of $199/month per practitioner, with volume discounts for hospital groups.";
+      advantage = "HIPAA-compliant custom speech model tuned for complex medical terminologies and multilingual dialogue.";
+      financialProjections = "Projecting $6.2M ARR in Year 3 with an estimated 85% gross margin.";
+      askDetails = `Raising ${ask} Series A funding to expand hospital integrations, fast-track FDA clearance, and scale sales.`;
+    } else if (startup.id === "solarloop") {
+      problem = "Community clean energy sharing is restricted by inefficient billing, lack of grid data, and micro-transaction friction.";
+      solution = "Decentralized community solar grid optimization software enabling peer-to-peer clean energy transactions via automated smart contracts.";
+      businessModel = "2.5% transaction commission on energy exchanged through the peer-to-peer marketplace.";
+      advantage = "Patent-pending micro-transaction settlement engine capable of processing 10,000 grid transactions per second.";
+      financialProjections = "Targeting $4.8M net revenue by Year 4, covering 120 regional microgrids.";
+      askDetails = `Raising ${ask} Series B+ funding to scale infrastructure across 5 state grids and launch partnerships with utilities.`;
+    } else if (startup.id === "learnsphere") {
+      problem = "Primary school students struggle with standardized math curriculums, leading to low retention and high failure rates.";
+      solution = "A gamified, adaptive math learning curriculum that dynamically adjusts learning pathways based on real-time diagnostic metrics.";
+      businessModel = "Annual school licensing fee of $12 per student, alongside a parent-premium home tier at $4.99/month.";
+      advantage = "Diagnostic algorithm that double student retention rates compared to traditional digital worksheets.";
+      financialProjections = "Projecting $1.8M ARR by Year 2, reaching profitability in Q3 of Year 2.";
+      askDetails = `Raising ${ask} Seed funding to develop advanced curriculum content, expand school sales, and implement mobile versions.`;
+    } else if (startup.id === "neurocare") {
+      problem = "Busy professionals suffer from chronic sleep deprivation and low recovery rates, decreasing workplace productivity.";
+      solution = "A non-invasive neuro-stimulation headband that emits low-frequency neural pulses to double deep sleep duration.";
+      businessModel = "Direct-to-consumer hardware sales at $299 per unit, plus a premium sleep analytics subscription at $9.99/month.";
+      advantage = "Clinically validated neural-pulse technology certified by top sleep medicine laboratories.";
+      financialProjections = "Projecting $12.5M hardware sales revenue by Year 3, reaching profitability in month 22.";
+      askDetails = `Raising ${ask} Seed funding to scale hardware manufacturing lines, launch clinical trials, and run consumer marketing.`;
+    } else if (startup.id === "paychain") {
+      problem = "Cross-border e-commerce merchants lose up to 5% in transaction fees and suffer from 3-5 day settlement delays.";
+      solution = "An instant global settlement API aggregating local payment networks and blockchain tech to reduce fees by 90%.";
+      businessModel = "Flat 0.5% transaction fee on all international settlement volume.";
+      advantage = "Unified API with built-in compliance engine and liquidity router across 140 currencies.";
+      financialProjections = "Projecting $8.5M transaction revenue on $1.7B GMV by Year 3.";
+      askDetails = `Raising ${ask} Series A funding to expand local payment licenses, grow developer relations, and launch in LatAm.`;
+    } else if (startup.id === "ecopack") {
+      problem = "Single-use plastics in cosmetics packaging take 500 years to decompose, creating severe ecological waste.";
+      solution = "Water-soluble seaweed packaging materials that dissolve naturally in warm water within minutes without microplastics.";
+      businessModel = "Wholesale supply contracts sold per ton directly to consumer brand manufacturers.";
+      advantage = "Proprietary heat-resistant seaweed formula that doesn't melt in humid storage conditions but dissolves instantly in water.";
+      financialProjections = "Projecting $1.2M ARR in Year 2, break-even by month 16.";
+      askDetails = `Raising ${ask} Pre-seed funding to expand production facilities, acquire eco-certifications, and secure pilot contracts.`;
+    } else if (startup.id === "promptcraft") {
+      problem = "Enterprises struggle with prompt version control, model output regressions, and soaring API costs when deploying LLMs.";
+      solution = "An enterprise prompt engineering registry, version control system, and automated regression testing suite.";
+      businessModel = "Developer-seat pricing ($25/seat/month) + custom self-hosted enterprise deployment licensing.";
+      advantage = "Real-time prompt tracing engine that auto-optimizes prompt token counts, reducing API bills by 30%.";
+      financialProjections = "Projecting $3.5M ARR by Year 3, profitable in month 20.";
+      askDetails = `Raising ${ask} Seed funding to hire core developers, launch developer marketing, and deploy enterprise cloud support.`;
+    } else if (startup.id === "saasify") {
+      problem = "Companies running legacy software lose customers due to outdated, complex desktop portals that lack mobile support.";
+      solution = "A no-code customer portal builder that hooks directly into legacy databases to publish modern, responsive web/mobile apps.";
+      businessModel = "Usage-based tier list starting at $199/month, scaling up for enterprise data bandwidth.";
+      advantage = "Zero-code database schema mapping technology that requires no APIs or mainframe code adjustments.";
+      financialProjections = "Projecting $7.2M ARR by Year 3, with 85% gross margins.";
+      askDetails = `Raising ${ask} Series A funding to expand partner integrations, hire enterprise support staff, and launch marketing.`;
+    } else {
+      problem = `Target customers are experiencing significant inefficiencies in the ${sector} space, leading to lost time and money.`;
+      solution = startup.description;
+      businessModel = "Subscription-based B2B SaaS model with tiered packages based on user seats and transaction volume.";
+      advantage = "First-mover advantage in this niche with custom proprietary models and integrations.";
+      financialProjections = "Projecting high growth over the next 3-5 years, hitting profitability in Year 2.";
+      askDetails = `Raising ${ask} funding in the ${stage} stage to expand product engineering and grow client base.`;
+    }
+
+    return {
+      problem,
+      solution,
+      businessModel,
+      advantage,
+      financialProjections,
+      askDetails
+    };
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!selectedStartup) return;
+
+    showToast("Preparing PDF download...", "info");
+
+    try {
+      let html2pdf: any;
+      if (typeof window !== "undefined") {
+        if ((window as any).html2pdf) {
+          html2pdf = (window as any).html2pdf;
+        } else {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load PDF library"));
+            document.head.appendChild(script);
+          });
+          html2pdf = (window as any).html2pdf;
+        }
+      }
+
+      if (!html2pdf) {
+        throw new Error("PDF library not loaded");
+      }
+
+      const deck = getPitchDeckDetails(selectedStartup);
+      const element = document.createElement("div");
+      element.style.width = "277mm";
+      element.style.color = "#ffffff";
+      element.style.backgroundColor = "#0b0f19";
+      element.style.fontFamily = "'Inter', sans-serif";
+      element.style.lineHeight = "1.6";
+
+      element.innerHTML = `
+        <!-- SLIDE 1: Title -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | Pitch Deck</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 1 of 10</span>
+          </div>
+          <div style="text-align: center; margin: auto 0;">
+            <div style="width: 80px; height: 80px; background: ${selectedStartup.logoBg}; border-radius: 16px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #ffffff;">
+              ${selectedStartup.logoText}
+            </div>
+            <h1 style="font-size: 44px; font-weight: 800; color: #ffffff; margin-bottom: 16px; margin-top: 0;">${selectedStartup.name}</h1>
+            <p style="font-size: 20px; font-style: italic; color: #94a3b8; max-width: 700px; margin: 0 auto;">"${selectedStartup.tagline}"</p>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+            <span>Generated on ${new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 2: Problem -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 2 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #ef4444; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">The Problem</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">What Issue Are We Solving?</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #ef4444; padding-left: 20px; margin: 0;">
+              ${deck.problem}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 3: Solution -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 3 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #2fbf64; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">The Solution</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">Our Product & Innovation</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #2fbf64; padding-left: 20px; margin: 0;">
+              ${deck.solution}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 4: Market Opportunity -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 4 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #3b82f6; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Market Opportunity</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 30px; margin-top: 0;">Target Sector & Market Size</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+              <div style="background: rgba(255, 255, 255, 0.03); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Target Sector</div>
+                <div style="font-size: 24px; font-weight: 700; color: #ffffff;">${selectedStartup.sectorLabel}</div>
+              </div>
+              <div style="background: rgba(255, 255, 255, 0.03); padding: 25px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Funding Stage</div>
+                <div style="font-size: 24px; font-weight: 700; color: #ffffff;">${selectedStartup.stage}</div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 5: Product / Traction -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 5 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #ec4899; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Product & Traction</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 20px; margin-top: 0;">Milestones & User Growth</h2>
+            <p style="font-size: 18px; color: #e2e8f0; line-height: 1.8; margin-bottom: 20px; text-align: justify;">
+              ${selectedStartup.description}
+            </p>
+            <div style="font-size: 14px; color: #94a3b8;">
+              Submitted Date: <strong>${selectedStartup.submittedDate}</strong> | Current Status: <strong>${selectedStartup.status}</strong>
+            </div>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 6: Business Model -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 6 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #eab308; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Business Model</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">How We Generate Revenue</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #eab308; padding-left: 20px; margin: 0;">
+              ${deck.businessModel}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 7: Competitive Advantage -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 7 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #a855f7; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Competitive Advantage</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">Why We Win (USP)</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #a855f7; padding-left: 20px; margin: 0;">
+              ${deck.advantage}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 8: Financial Projections -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 8 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #06b6d4; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">Financials</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">Growth & Forecast</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #06b6d4; padding-left: 20px; margin: 0;">
+              ${deck.financialProjections}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 9: Team -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 9 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #f97316; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">The Team</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 30px; margin-top: 0;">Leadership & Expertise</h2>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 30px;">
+              <h3 style="font-size: 24px; font-weight: 700; color: #ffffff; margin-top: 0; margin-bottom: 8px;">${selectedStartup.founder}</h3>
+              <p style="font-size: 16px; color: #94a3b8; margin-top: 0; margin-bottom: 20px;">Founder & CEO, ${selectedStartup.name}</p>
+              <div style="font-size: 14px; color: #e2e8f0;">
+                Email: <span style="color: #2fbf64;">${selectedStartup.email}</span><br />
+                LinkedIn: <span style="color: #3b82f6;">${selectedStartup.linkedin}</span>
+              </div>
+            </div>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+          </div>
+        </div>
+
+        <!-- SLIDE 10: Ask -->
+        <div style="width: 277mm; height: 190mm; box-sizing: border-box; padding: 45px; color: #ffffff; background-color: #0b0f19; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="border-bottom: 2px solid #2fbf64; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 14px; font-weight: 800; color: #2fbf64; text-transform: uppercase;">StepUp for AI | ${selectedStartup.name}</span>
+            <span style="font-size: 12px; color: #94a3b8;">Slide 10 of 10</span>
+          </div>
+          <div style="margin: auto 0;">
+            <span style="color: #2fbf64; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">The Ask</span>
+            <h2 style="font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 24px; margin-top: 0;">Funding & Milestones</h2>
+            <p style="font-size: 20px; color: #e2e8f0; line-height: 1.8; border-left: 4px solid #2fbf64; padding-left: 20px; margin: 0;">
+              ${deck.askDetails}
+            </p>
+          </div>
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94a3b8;">
+            <span>Confidential Investment Summary</span>
+            <span>StepUp for AI Network</span>
+          </div>
+        </div>
+      `;
+
+      const options = {
+        margin: [0, 0, 0, 0],
+        filename: `${selectedStartup.name.replace(/\s+/g, "_")}_Pitch_Deck.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#0b0f19" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+      };
+
+      await html2pdf().from(element).set(options).save();
+      showToast("PDF downloaded successfully!", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Failed to generate PDF. Please try again.", "error");
+    }
   };
 
   // Profile Edit Toggle
@@ -498,6 +850,7 @@ export default function InvestorDashboard() {
   const openPitchModal = (startup: Startup, mode: "pitch" | "contact") => {
     setSelectedStartup(startup);
     setModalMode(mode);
+    setCurrentSlide(0);
     setIsModalOpen(true);
   };
 
@@ -519,6 +872,205 @@ export default function InvestorDashboard() {
   const newPitchesCount = allPitches.filter(s => isNewThisWeek(s.submittedDate)).length;
   const shortlistedPitchesCount = shortlistedIds.length;
 
+  // Compile slides inside render
+  const selectedDeck = selectedStartup ? getPitchDeckDetails(selectedStartup) : null;
+  const slides = selectedStartup && selectedDeck ? [
+    {
+      title: "Title / Hook",
+      content: (
+        <div style={{ textAlign: "center", padding: "30px 10px", width: "100%" }}>
+          <div style={{
+            width: "70px",
+            height: "70px",
+            background: selectedStartup.logoBg,
+            borderRadius: "14px",
+            margin: "0 auto 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.75rem",
+            fontWeight: 800,
+            color: "#ffffff",
+            boxShadow: "var(--glow-shadow)"
+          }}>
+            {selectedStartup.logoText}
+          </div>
+          <h2 style={{ fontSize: "2.5rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "12px", marginTop: 0 }}>
+            {selectedStartup.name}
+          </h2>
+          <p style={{ fontSize: "1.25rem", fontStyle: "italic", color: "var(--text-secondary)", maxWidth: "550px", margin: "0 auto", lineHeight: "1.4" }}>
+            "{selectedStartup.tagline}"
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "The Problem",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#ef4444", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            The Problem
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            What Issue Are We Solving?
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid #ef4444", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.problem}
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "The Solution",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "var(--accent)", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            The Solution
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Our Product & Innovation
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid var(--accent)", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.solution}
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "Market Opportunity",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#3b82f6", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            Market Opportunity
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "20px", marginTop: 0 }}>
+            Target Sector & Market Size
+          </h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <div className="glass-card" style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Target Sector</div>
+              <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>{selectedStartup.sectorLabel}</div>
+            </div>
+            <div className="glass-card" style={{ padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.02)" }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Funding Stage</div>
+              <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--text-primary)" }}>{selectedStartup.stage}</div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Product / Traction",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#ec4899", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            Product & Traction
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Milestones & User Growth
+          </h3>
+          <p style={{ fontSize: "1.1rem", color: "var(--text-secondary)", lineHeight: "1.7", marginBottom: "16px", marginTop: 0 }}>
+            {selectedStartup.description}
+          </p>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            Submitted: <strong>{selectedStartup.submittedDate}</strong> | Status: <strong>{selectedStartup.status}</strong>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Business Model",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#eab308", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            Business Model
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            How We Generate Revenue
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid #eab308", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.businessModel}
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "Competitive Advantage",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#a855f7", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            Competitive Advantage
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Why We Win (USP)
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid #a855f7", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.advantage}
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "Financial Projections",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#06b6d4", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            Financials
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Growth & Forecast
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid #06b6d4", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.financialProjections}
+          </p>
+        </div>
+      )
+    },
+    {
+      title: "The Team",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "#f97316", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            The Team
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Leadership & Expertise
+          </h3>
+          <div style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border-color)", borderRadius: "12px", padding: "16px" }}>
+            <h4 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 4px 0" }}>{selectedStartup.founder}</h4>
+            <p style={{ color: "var(--text-secondary)", margin: "0 0 12px 0", fontSize: "0.9rem" }}>Founder & CEO, {selectedStartup.name}</p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <a href={`mailto:${selectedStartup.email}`} className="founder-btn" style={{ padding: "8px 12px", fontSize: "0.8rem", background: "rgba(255, 255, 255, 0.03)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <i className="fa-solid fa-envelope"></i>
+                <span>Email</span>
+              </a>
+              <a href={selectedStartup.linkedin} target="_blank" rel="noopener noreferrer" className="founder-btn linkedin-btn" style={{ padding: "8px 12px", fontSize: "0.8rem", background: "rgba(59, 130, 246, 0.15)", border: "1px solid rgba(59, 130, 246, 0.3)", borderRadius: "6px", color: "#3b82f6", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <i className="fa-brands fa-linkedin"></i>
+                <span>LinkedIn</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "The Ask",
+      content: (
+        <div style={{ padding: "10px", width: "100%" }}>
+          <div style={{ color: "var(--accent)", fontSize: "0.85rem", fontWeight: 700, textTransform: "uppercase", marginBottom: "6px", letterSpacing: "1px" }}>
+            The Ask
+          </div>
+          <h3 style={{ fontSize: "1.75rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: "16px", marginTop: 0 }}>
+            Funding & Milestones
+          </h3>
+          <p style={{ fontSize: "1.15rem", color: "var(--text-secondary)", lineHeight: "1.8", borderLeft: "4px solid var(--accent)", paddingLeft: "16px", margin: 0 }}>
+            {selectedDeck.askDetails}
+          </p>
+        </div>
+      )
+    }
+  ] : [];
+
   return (
     <div className="app-container">
       {/* Mobile Sidebar Backdrop Overlay */}
@@ -528,7 +1080,6 @@ export default function InvestorDashboard() {
       <aside className={`sidebar ${isSidebarOpen ? "open" : ""}`} id="sidebar">
         <div className="sidebar-header">
           <div className="logo">
-            <i className="fa-solid fa-chart-line logo-icon"></i>
             <span className="logo-text">StepUp <span className="logo-accent">for AI</span></span>
           </div>
           <button className="btn-close-sidebar" onClick={() => setIsSidebarOpen(false)} aria-label="Close Sidebar">
@@ -550,7 +1101,6 @@ export default function InvestorDashboard() {
                 <span>Investor Profile</span>
               </button>
             </li>
-
           </ul>
         </nav>
 
@@ -613,7 +1163,7 @@ export default function InvestorDashboard() {
                     <i className="fa-solid fa-folder-open"></i>
                   </div>
                   <div className="stat-info">
-                     <h3 id="stat-total-pitches">{totalPitchesCount}</h3>
+                    <h3 id="stat-total-pitches">{totalPitchesCount}</h3>
                     <p>Total Pitches</p>
                   </div>
                 </div>
@@ -729,7 +1279,7 @@ export default function InvestorDashboard() {
                           <label className="custom-checkbox">
                             <input type="checkbox" className="cb-view-pitch" checked={selectedStartup?.id === startup.id && modalMode === "pitch" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "pitch"); else closePitchModal(); }} aria-label="Check to view full pitch details" />
                             <span className="checkbox-box"><i className="fa-solid fa-check"></i></span>
-                            <span className="checkbox-label">View Pitch</span>
+                            <span className="checkbox-label">More Details</span>
                           </label>
                           <label className="custom-checkbox">
                             <input type="checkbox" className="cb-view-contact" checked={selectedStartup?.id === startup.id && modalMode === "contact" && isModalOpen} onChange={(e) => { if (e.target.checked) openPitchModal(startup, "contact"); else closePitchModal(); }} aria-label="Check to view owner contact details" />
@@ -738,7 +1288,28 @@ export default function InvestorDashboard() {
                           </label>
                         </div>
                         
-                        <div className="card-footer-actions">
+                        <div className="card-footer-actions" style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                          <button 
+                            className="btn-pitch-deck-action" 
+                            onClick={() => openPitchModal(startup, "pitch")}
+                            style={{
+                              padding: "6px 12px",
+                              borderRadius: "8px",
+                              background: "rgba(47, 191, 100, 0.1)",
+                              border: "1px solid rgba(47, 191, 100, 0.2)",
+                              color: "var(--accent)",
+                              fontSize: "0.8rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              transition: "all var(--transition-fast)"
+                            }}
+                          >
+                            <i className="fa-solid fa-file-pdf"></i>
+                            <span>Pitch Deck</span>
+                          </button>
                           <button className={`bookmark-btn ${isShortlisted ? "active" : ""}`} onClick={() => toggleShortlist(startup.id)} aria-label={isShortlisted ? "Remove from shortlist" : "Add to shortlist"} title={isShortlisted ? "Remove from Shortlist" : "Add to Shortlist"}>
                             <i className={`fa-${isShortlisted ? "solid" : "regular"} fa-bookmark`}></i>
                           </button>
@@ -965,8 +1536,6 @@ export default function InvestorDashboard() {
               </div>
             </section>
           )}
-
-
         </main>
       </div>
 
@@ -974,83 +1543,88 @@ export default function InvestorDashboard() {
       <div className={`modal-backdrop ${isModalOpen ? "open" : ""}`} role="dialog" aria-modal="true" aria-hidden={!isModalOpen} onClick={closePitchModal}>
         {selectedStartup && (
           <div className="modal glass-card" onClick={(e) => e.stopPropagation()}>
+            {modalMode === "pitch" && (
+              <button 
+                className="btn-download-pdf" 
+                onClick={handleDownloadPDF} 
+                title="Download Pitch Deck as PDF"
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "64px",
+                  background: "rgba(47, 191, 100, 0.1)",
+                  border: "1px solid rgba(47, 191, 100, 0.25)",
+                  color: "var(--accent)",
+                  height: "32px",
+                  borderRadius: "8px",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "0 12px",
+                  transition: "all var(--transition-fast)"
+                }}
+              >
+                <i className="fa-solid fa-file-pdf"></i>
+                <span>Download PDF</span>
+              </button>
+            )}
             <button className="btn-close-modal" onClick={closePitchModal} aria-label="Close Modal">
               <i className="fa-solid fa-xmark"></i>
             </button>
             <div className="modal-content">
               {modalMode === "pitch" ? (
-                <>
-                  <div className="modal-header-section">
-                    <div className="modal-brand">
-                      <div className="modal-title">
-                        <h2>{selectedStartup.name}</h2>
-                        <div className="modal-meta-tags">
-                          <span className="tag">{selectedStartup.sectorLabel}</span>
-                          <span className="tag">{selectedStartup.stage}</span>
-                          <span className={`status-badge ${
-                            shortlistedIds.includes(selectedStartup.id)
-                              ? "shortlisted"
-                              : selectedStartup.status === "Shortlisted"
-                              ? "review"
-                              : selectedStartup.status === "Under Review"
-                              ? "review"
-                              : "new"
-                          }`}>
-                            {shortlistedIds.includes(selectedStartup.id)
-                              ? "Shortlisted"
-                              : selectedStartup.status === "Shortlisted"
-                              ? "Under Review"
-                              : selectedStartup.status}
-                          </span>
-                        </div>
-                        <p className="modal-tagline">{selectedStartup.tagline}</p>
-                      </div>
-                    </div>
+                <div className="pitch-deck-viewer" style={{ minHeight: "400px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  {/* Active Slide content */}
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", minHeight: "280px" }}>
+                    {slides[currentSlide]?.content}
                   </div>
 
-                  <div className="modal-body-section">
-                    <h3 className="modal-section-title">Startup Pitch</h3>
-                    <p className="modal-description">{selectedStartup.description}</p>
-                  </div>
-
-                  <div className="modal-metrics-section">
-                    <div className="modal-metric-card">
-                      <h4>Funding Ask</h4>
-                      <p className="accent-val">{formatAskAmount(selectedStartup.ask)}</p>
+                  {/* Navigation controls */}
+                  <div className="slide-controls" style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderTop: "1px solid var(--border-color)",
+                    paddingTop: "20px",
+                    marginTop: "20px"
+                  }}>
+                    <button 
+                      disabled={currentSlide === 0}
+                      onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
+                      className="btn btn-secondary"
+                      style={{
+                        opacity: currentSlide === 0 ? 0.5 : 1,
+                        cursor: currentSlide === 0 ? "not-allowed" : "pointer",
+                        padding: "8px 16px",
+                        fontSize: "0.85rem"
+                      }}
+                    >
+                      <i className="fa-solid fa-arrow-left"></i> Previous
+                    </button>
+                    
+                    <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                      Slide {currentSlide + 1} of {slides.length} : <strong>{slides[currentSlide]?.title}</strong>
                     </div>
-                    <div className="modal-metric-card">
-                      <h4>Submitted Date</h4>
-                      <p>{selectedStartup.submittedDate}</p>
-                    </div>
-                  </div>
 
-                  <div className="modal-founder-section">
-                    <h3 className="modal-section-title">Founder Contact Summary</h3>
-                    <div className="founder-profile">
-                      <div className="founder-info">
-                        <h4>{selectedStartup.founder}</h4>
-                        <p>Founder & CEO, {selectedStartup.name}</p>
-                      </div>
-                      <div className="founder-contact-links">
-                        <a href={`mailto:${selectedStartup.email}`} className="founder-btn" title="Email founder">
-                          <i className="fa-solid fa-envelope"></i>
-                          <span>Email</span>
-                        </a>
-                        <a href={selectedStartup.linkedin} target="_blank" rel="noopener noreferrer" className="founder-btn linkedin-btn" title="Founder LinkedIn">
-                          <i className="fa-brands fa-linkedin"></i>
-                          <span>LinkedIn</span>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="modal-footer-section">
-                    <button className="btn btn-secondary modal-bookmark-btn" onClick={() => toggleShortlist(selectedStartup.id)}>
-                      <i className={`fa-${shortlistedIds.includes(selectedStartup.id) ? "solid" : "regular"} fa-bookmark`}></i>
-                      <span>{shortlistedIds.includes(selectedStartup.id) ? "Shortlisted" : "Shortlist Pitch"}</span>
+                    <button 
+                      disabled={currentSlide === slides.length - 1}
+                      onClick={() => setCurrentSlide(prev => Math.min(slides.length - 1, prev + 1))}
+                      className="btn btn-primary"
+                      style={{
+                        opacity: currentSlide === slides.length - 1 ? 0.5 : 1,
+                        cursor: currentSlide === slides.length - 1 ? "not-allowed" : "pointer",
+                        padding: "8px 16px",
+                        fontSize: "0.85rem"
+                      }}
+                    >
+                      Next <i className="fa-solid fa-arrow-right"></i>
                     </button>
                   </div>
-                </>
+                </div>
               ) : (
                 <>
                   <div className="modal-header-section">
@@ -1113,7 +1687,7 @@ export default function InvestorDashboard() {
       {/* Toast Notification Container */}
       <div className="toast-container" id="toastContainer" aria-live="polite">
         {toasts.map(t => (
-          <div className={`toast ${t.type}`} key={t.id}>
+          <div className={`running-toast toast ${t.type}`} key={t.id}>
             <div className="toast-content-wrapper">
               <div className="toast-icon">
                 {t.type === "success" && <i className="fa-solid fa-circle-check"></i>}
