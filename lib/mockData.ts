@@ -16,7 +16,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "sarah@apexai.io",
     linkedin: "https://www.linkedin.com/in/sarah-jenkins-apex",
     submittedDate: "2026-06-16",
-    status: "New"
+    status: "New",
+    location: "Bengaluru, India"
   },
   {
     id: "wealthstream",
@@ -33,7 +34,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "d.chen@wealthstream.com",
     linkedin: "https://www.linkedin.com/in/david-chen-wealthstream",
     submittedDate: "2026-06-14",
-    status: "Under Review"
+    status: "Under Review",
+    location: "Mumbai, India"
   },
   {
     id: "bioscribe",
@@ -50,7 +52,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "amanda@bioscribe.health",
     linkedin: "https://www.linkedin.com/in/amanda-ross-bioscribe",
     submittedDate: "2026-06-10",
-    status: "Shortlisted"
+    status: "Shortlisted",
+    location: "Hyderabad, India"
   },
   {
     id: "solarloop",
@@ -67,7 +70,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "marcus@solarloop.net",
     linkedin: "https://www.linkedin.com/in/marcus-vance-solarloop",
     submittedDate: "2026-06-17",
-    status: "New"
+    status: "New",
+    location: "Delhi, India"
   },
   {
     id: "learnsphere",
@@ -84,7 +88,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "elena@learnsphere.org",
     linkedin: "https://www.linkedin.com/in/elena-rostova-learnsphere",
     submittedDate: "2026-06-08",
-    status: "Under Review"
+    status: "Under Review",
+    location: "Pune, India"
   },
   {
     id: "neurocare",
@@ -101,7 +106,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "kenji@neurocare.io",
     linkedin: "https://www.linkedin.com/in/kenji-takahashi-neurocare",
     submittedDate: "2026-06-15",
-    status: "New"
+    status: "New",
+    location: "Chennai, India"
   },
   {
     id: "paychain",
@@ -118,7 +124,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "s.moreno@paychain.dev",
     linkedin: "https://www.linkedin.com/in/sofia-moreno-paychain",
     submittedDate: "2026-06-01",
-    status: "Under Review"
+    status: "Under Review",
+    location: "Bengaluru, India"
   },
   {
     id: "ecopack",
@@ -135,7 +142,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "liam@ecopacklabs.co",
     linkedin: "https://www.linkedin.com/in/liam-oconnor-ecopack",
     submittedDate: "2026-06-12",
-    status: "Shortlisted"
+    status: "Shortlisted",
+    location: "Kochi, India"
   },
   {
     id: "promptcraft",
@@ -152,7 +160,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "michael@promptcraft.ai",
     linkedin: "https://www.linkedin.com/in/michael-chang-promptcraft",
     submittedDate: "2026-06-18",
-    status: "New"
+    status: "New",
+    location: "San Francisco, US"
   },
   {
     id: "saasify",
@@ -169,7 +178,8 @@ export const STARTUP_DATA: Startup[] = [
     email: "emma@saasify.io",
     linkedin: "https://www.linkedin.com/in/emma-watson-saasify",
     submittedDate: "2026-05-28",
-    status: "Under Review"
+    status: "Under Review",
+    location: "London, UK"
   }
 ];
 

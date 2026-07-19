@@ -14,6 +14,15 @@ const Sidebar: React.FC = () => {
     getInitials
   } = useDashboard();
 
+  const menuItems = [
+    { id: "home", label: "Home", icon: "fa-house" },
+    { id: "pitch-decks", label: "Explore Pitches", icon: "fa-briefcase" },
+    { id: "shortlisted-ideas", label: "Shortlisted Ideas", icon: "fa-bookmark" },
+    { id: "about-us", label: "About Us", icon: "fa-circle-info" },
+    { id: "contact-us", label: "Contact Us", icon: "fa-envelope" },
+    { id: "profile", label: "Investor Profile", icon: "fa-user-tie" }
+  ];
+
   return (
     <>
       {/* Mobile Sidebar Backdrop Overlay */}
@@ -40,30 +49,20 @@ const Sidebar: React.FC = () => {
 
         <nav className="sidebar-nav">
           <ul>
-            <li>
-              <button
-                className={`nav-item ${activePanel === "pitch-decks" ? "active" : ""}`}
-                onClick={() => {
-                  setActivePanel("pitch-decks");
-                  setIsSidebarOpen(false);
-                }}
-              >
-                <i className="fa-solid fa-briefcase"></i>
-                <span>Pitch Decks</span>
-              </button>
-            </li>
-            <li>
-              <button
-                className={`nav-item ${activePanel === "profile" ? "active" : ""}`}
-                onClick={() => {
-                  setActivePanel("profile");
-                  setIsSidebarOpen(false);
-                }}
-              >
-                <i className="fa-solid fa-user-tie"></i>
-                <span>Investor Profile</span>
-              </button>
-            </li>
+            {menuItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  className={`nav-item ${activePanel === item.id ? "active" : ""}`}
+                  onClick={() => {
+                    setActivePanel(item.id);
+                    setIsSidebarOpen(false);
+                  }}
+                >
+                  <i className={`fa-solid ${item.icon}`}></i>
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
 

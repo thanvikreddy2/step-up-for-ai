@@ -27,6 +27,12 @@ interface DashboardContextType {
   setShortlistFilter: (filter: string) => void;
   sortOrder: string;
   setSortOrder: (order: string) => void;
+  locationFilter: string;
+  setLocationFilter: (location: string) => void;
+  companyFilter: string;
+  setCompanyFilter: (company: string) => void;
+  ratingFilter: number;
+  setRatingFilter: (rating: number) => void;
 
   // Profile
   profileData: ProfileData;
@@ -68,17 +74,15 @@ interface DashboardContextType {
   supportMessage: string;
   setSupportMessage: (val: string) => void;
 
-  // Modal
+  // Selected startup & tabs inside split-pane
   selectedStartup: Startup | null;
-  setSelectedStartup: React.Dispatch<React.SetStateAction<Startup | null>>;
-  modalMode: ModalMode;
-  setModalMode: React.Dispatch<React.SetStateAction<ModalMode>>;
-  isModalOpen: boolean;
-  setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSelectedStartup: (startup: Startup | null) => void;
+  isDeckToggled: boolean;
+  setIsDeckToggled: (toggled: boolean) => void;
   currentSlide: number;
   setCurrentSlide: React.Dispatch<React.SetStateAction<number>>;
 
-  // Deal Room
+  // Deal Room tabs
   activeTab: ActiveTab;
   setActiveTab: React.Dispatch<React.SetStateAction<ActiveTab>>;
   startupRatings: Record<string, { pedigree: number; tailwinds: number; moat: number }>;
@@ -92,10 +96,8 @@ interface DashboardContextType {
   toggleShortlist: (id: string) => void;
   updateNotes: (startupId: string, notesText: string) => void;
   updateRating: (startupId: string, metric: MetricKey, value: number) => void;
-  openPitchModal: (startup: Startup, mode?: ModalMode) => void;
-  closePitchModal: () => void;
   clearAllFilters: () => void;
-  getFilteredPitches: () => Startup[];
+  getFilteredPitches: (forcedShortlisted?: boolean) => Startup[];
   startEditingProfile: () => void;
   cancelEditingProfile: () => void;
   saveProfileData: () => void;
@@ -115,7 +117,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [isMounted, setIsMounted] = useState(false);
   const [allPitches, setAllPitches] = useState<Startup[]>(STARTUP_DATA);
   const [shortlistedIds, setShortlistedIds] = useState<string[]>([]);
-  const [activePanel, setActivePanel] = useState<string>("pitch-decks");
+  const [activePanel, setActivePanel] = useState<string>("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Filters State
@@ -124,6 +126,9 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [stageFilter, setStageFilter] = useState("all");
   const [shortlistFilter, setShortlistFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
+  const [locationFilter, setLocationFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
+  const [ratingFilter, setRatingFilter] = useState(0);
 
   // Profile State
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -159,17 +164,16 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [supportSubject, setSupportSubject] = useState("");
   const [supportMessage, setSupportMessage] = useState("");
 
-  // Modal State
+  // Selected startup in details view
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
-  const [modalMode, setModalMode] = useState<ModalMode>("pitch");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeckToggled, setIsDeckToggled] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // Toasts State
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextToastId = useRef(0);
 
-  // Sidebar Tabs State
+  // Deal Room Tabs State
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [startupRatings, setStartupRatings] = useState<Record<string, { pedigree: number; tailwinds: number; moat: number }>>({});
   const [startupNotes, setStartupNotes] = useState<Record<string, string>>({});
@@ -285,30 +289,25 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, []);
 
-  const openPitchModal = (startup: Startup, mode: ModalMode = "pitch") => {
-    setSelectedStartup(startup);
-    setModalMode(mode);
-    setIsModalOpen(true);
-    setCurrentSlide(0);
-    setActiveTab("overview");
-  };
-
-  const closePitchModal = () => {
-    setIsModalOpen(false);
-    setSelectedStartup(null);
-  };
-
   const clearAllFilters = () => {
     setSearchQuery("");
     setSectorFilter("all");
     setStageFilter("all");
     setShortlistFilter("all");
     setSortOrder("newest");
+    setLocationFilter("all");
+    setCompanyFilter("all");
+    setRatingFilter(0);
     showToast("Filters reset", "info");
   };
 
-  const getFilteredPitches = () => {
+  const getFilteredPitches = (forcedShortlisted = false) => {
     let result = [...allPitches];
+
+    // Forced shortlisted mode (when on shortlisted ideas panel)
+    if (forcedShortlisted) {
+      result = result.filter(s => shortlistedIds.includes(s.id));
+    }
 
     // Search query filter
     if (searchQuery.trim() !== "") {
@@ -322,7 +321,17 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       );
     }
 
-    // Sector filter
+    // Company filter
+    if (companyFilter !== "all") {
+      result = result.filter(s => s.id === companyFilter);
+    }
+
+    // Location filter
+    if (locationFilter !== "all") {
+      result = result.filter(s => s.location && s.location.toLowerCase().includes(locationFilter.toLowerCase()));
+    }
+
+    // Sector/Industry filter
     if (sectorFilter !== "all") {
       result = result.filter(s => s.sector === sectorFilter);
     }
@@ -333,8 +342,17 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
 
     // Shortlisted filter
-    if (shortlistFilter === "shortlisted") {
+    if (!forcedShortlisted && shortlistFilter === "shortlisted") {
       result = result.filter(s => shortlistedIds.includes(s.id));
+    }
+
+    // Rating Filter
+    if (ratingFilter > 0) {
+      result = result.filter(s => {
+        const rating = startupRatings[s.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 };
+        const average = (rating.pedigree + rating.tailwinds + rating.moat) / 3;
+        return average >= ratingFilter;
+      });
     }
 
     // Sorting
@@ -353,6 +371,21 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     return result;
   };
+
+  // Sync selectedStartup when filtered pitches list changes
+  const currentFiltered = getFilteredPitches(activePanel === "shortlisted-ideas");
+  useEffect(() => {
+    if (currentFiltered.length > 0) {
+      // If currently selected is not in filtered, reset to first filtered
+      if (!selectedStartup || !currentFiltered.some(s => s.id === selectedStartup.id)) {
+        setSelectedStartup(currentFiltered[0]);
+        setCurrentSlide(0);
+        setIsDeckToggled(false);
+      }
+    } else {
+      setSelectedStartup(null);
+    }
+  }, [searchQuery, sectorFilter, stageFilter, shortlistFilter, sortOrder, locationFilter, companyFilter, ratingFilter, activePanel, shortlistedIds]);
 
   // Profile Edit Actions
   const startEditingProfile = () => {
@@ -455,6 +488,12 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setShortlistFilter,
         sortOrder,
         setSortOrder,
+        locationFilter,
+        setLocationFilter,
+        companyFilter,
+        setCompanyFilter,
+        ratingFilter,
+        setRatingFilter,
         profileData,
         setProfileData,
         profilePicData,
@@ -489,10 +528,8 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSupportMessage,
         selectedStartup,
         setSelectedStartup,
-        modalMode,
-        setModalMode,
-        isModalOpen,
-        setIsModalOpen,
+        isDeckToggled,
+        setIsDeckToggled,
         currentSlide,
         setCurrentSlide,
         activeTab,
@@ -504,8 +541,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         toggleShortlist,
         updateNotes,
         updateRating,
-        openPitchModal,
-        closePitchModal,
         clearAllFilters,
         getFilteredPitches,
         startEditingProfile,

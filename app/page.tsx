@@ -5,10 +5,10 @@ import "@/styles/investor-dashboard.css";
 import { DashboardProvider, useDashboard } from "@/context/DashboardContext";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import StatsStrip from "@/components/StatsStrip";
-import FilterBar from "@/components/FilterBar";
-import StartupGrid from "@/components/StartupGrid";
-import DealRoomModal from "@/components/DealRoomModal";
+import HomePanel from "@/components/HomePanel";
+import SplitPitchDashboard from "@/components/SplitPitchDashboard";
+import AboutPanel from "@/components/AboutPanel";
+import ContactPanel from "@/components/ContactPanel";
 import ProfilePanel from "@/components/ProfilePanel";
 import ToastContainer from "@/components/ToastContainer";
 
@@ -41,19 +41,20 @@ function DashboardContent() {
         <Header />
         
         <main className="panels-container">
-          {activePanel === "pitch-decks" && (
-            <section id="panel-pitch-decks" className="dashboard-panel active">
-              <StatsStrip />
-              <FilterBar />
-              <StartupGrid />
-            </section>
-          )}
-
+          {activePanel === "home" && <HomePanel />}
+          
+          {activePanel === "pitch-decks" && <SplitPitchDashboard />}
+          
+          {activePanel === "shortlisted-ideas" && <SplitPitchDashboard forcedShortlisted={true} />}
+          
+          {activePanel === "about-us" && <AboutPanel />}
+          
+          {activePanel === "contact-us" && <ContactPanel />}
+          
           {activePanel === "profile" && <ProfilePanel />}
         </main>
       </div>
 
-      <DealRoomModal />
       <ToastContainer />
     </div>
   );

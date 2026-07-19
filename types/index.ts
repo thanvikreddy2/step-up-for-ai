@@ -14,6 +14,7 @@ export interface Startup {
   linkedin: string;
   submittedDate: string;
   status: string;
+  location: string;
 }
 
 export interface ProfileData {

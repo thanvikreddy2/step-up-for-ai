@@ -6,6 +6,25 @@ import { useDashboard } from "@/context/DashboardContext";
 const Header: React.FC = () => {
   const { activePanel, setIsSidebarOpen } = useDashboard();
 
+  const getTitle = () => {
+    switch (activePanel) {
+      case "home":
+        return "Home Portal";
+      case "pitch-decks":
+        return "Explore Pitches";
+      case "shortlisted-ideas":
+        return "Shortlisted Ideas";
+      case "about-us":
+        return "About StepUp";
+      case "contact-us":
+        return "Contact Investment Team";
+      case "profile":
+        return "Investor Profile";
+      default:
+        return "Investor Portal";
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.reload();
@@ -22,8 +41,7 @@ const Header: React.FC = () => {
           <i className="fa-solid fa-bars"></i>
         </button>
         <h1 className="panel-title" id="panelTitle">
-          {activePanel === "pitch-decks" && "Pitch Decks"}
-          {activePanel === "profile" && "Investor Profile"}
+          {getTitle()}
         </h1>
       </div>
 
