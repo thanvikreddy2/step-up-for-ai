@@ -3,14 +3,14 @@
 import React from "react";
 import "@/styles/investor-dashboard.css";
 import { DashboardProvider, useDashboard } from "@/context/DashboardContext";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import HomePanel from "@/components/HomePanel";
-import SplitPitchDashboard from "@/components/SplitPitchDashboard";
-import AboutPanel from "@/components/AboutPanel";
-import ContactPanel from "@/components/ContactPanel";
-import ProfilePanel from "@/components/ProfilePanel";
-import ToastContainer from "@/components/ToastContainer";
+import Sidebar from "@/components/Layout/Sidebar";
+import Header from "@/components/Layout/Header";
+import HomePanel from "@/components/Pages/HomePanel";
+import SplitPitchDashboard from "@/components/Dashboard/SplitPitchDashboard";
+import AboutPanel from "@/components/Pages/AboutPanel";
+import ContactPanel from "@/components/Pages/ContactPanel";
+import ProfilePanel from "@/components/Profile/ProfilePanel";
+import ToastContainer from "@/components/UI/ToastContainer";
 
 function DashboardContent() {
   const { activePanel, isMounted } = useDashboard();

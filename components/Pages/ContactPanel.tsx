@@ -35,7 +35,7 @@ const ContactPanel: React.FC = () => {
         }}
       >
         <h2 style={{ fontSize: "2rem", fontWeight: 800, color: "#ffffff", marginBottom: "12px", marginTop: 0 }}>
-          Contact investment Desk
+          Contact Investment Desk
         </h2>
         <p style={{ fontSize: "1.05rem", color: "var(--text-secondary)", lineHeight: "1.6", margin: 0 }}>
           Have general inquiries, syndicate setup questions, or want to submit a new startup recommendation? Fill out the contact form below to directly connect with StepUp's administration team via WhatsApp.

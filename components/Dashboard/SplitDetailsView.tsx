@@ -5,11 +5,11 @@ import { useDashboard } from "@/context/DashboardContext";
 import { getPitchDeckDetails } from "@/lib/pitchDeckData";
 import { downloadPitchDeckPDF } from "@/lib/pdfGenerator";
 import { formatAskAmount, formatLakhs } from "@/lib/utils";
-import InlineSlideshow from "./InlineSlideshow";
-import OverviewTab from "./OverviewTab";
-import DataRoomTab from "./DataRoomTab";
-import CapTableTab from "./CapTableTab";
-import NotesTab from "./NotesTab";
+import InlineSlideshow from "../DealRoom/InlineSlideshow";
+import OverviewTab from "../DealRoom/OverviewTab";
+import DataRoomTab from "../DealRoom/DataRoomTab";
+import CapTableTab from "../DealRoom/CapTableTab";
+import NotesTab from "../DealRoom/NotesTab";
 
 const SplitDetailsView: React.FC = () => {
   const {
@@ -221,6 +221,8 @@ const SplitDetailsView: React.FC = () => {
                   startup={selectedStartup}
                   startupRatings={startupRatings}
                   updateRating={updateRating}
+                  formatAskAmount={formatAskAmount}
+                  formatLakhs={formatLakhs}
                 />
               )}
 

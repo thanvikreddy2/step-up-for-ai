@@ -26,7 +26,7 @@ const HomePanel: React.FC = () => {
         <div
           style={{
             position: "absolute",
-            top: "-10%', right: '-10%'",
+            top: "-10%", right: "-10%",
             width: "300px",
             height: "300px",
             background: "rgba(47, 191, 100, 0.08)",

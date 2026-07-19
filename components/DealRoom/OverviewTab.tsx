@@ -2,18 +2,21 @@
 
 import React from "react";
 import { Startup, MetricKey } from "@/types";
-import { formatAskAmount, formatLakhs } from "@/lib/utils";
 
 interface OverviewTabProps {
   startup: Startup;
   startupRatings: Record<string, { pedigree: number; tailwinds: number; moat: number }>;
   updateRating: (startupId: string, metric: MetricKey, value: number) => void;
+  formatAskAmount: (amount: number) => string;
+  formatLakhs: (amount: number) => string;
 }
 
 const OverviewTab: React.FC<OverviewTabProps> = ({
   startup,
   startupRatings,
-  updateRating
+  updateRating,
+  formatAskAmount,
+  formatLakhs
 }) => {
   const currentStartupRating = startupRatings[startup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 };
   const currentAverageRating =
@@ -36,12 +39,6 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
         <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ position: "relative", width: "46px", height: "46px" }}>
             <svg width="46" height="46" viewBox="0 0 56 56">
-              <defs>
-                <linearGradient id="emeraldTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#10b981" />
-                  <stop offset="100%" stopColor="#059669" />
-                </linearGradient>
-              </defs>
               <circle cx="28" cy="28" r="23" fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="5" />
               <circle cx="28" cy="28" r="23" fill="transparent" stroke="url(#emeraldTealGrad)" strokeWidth="5"
                       strokeDasharray="144.5" strokeDashoffset={144.5 * (1 - 0.6)} strokeLinecap="round" transform="rotate(-90 28 28)" />

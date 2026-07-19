@@ -25,7 +25,6 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile Sidebar Backdrop Overlay */}
       <div
         className={`sidebar-overlay ${isSidebarOpen ? "open" : ""}`}
         onClick={() => setIsSidebarOpen(false)}
