@@ -1,51 +1,110 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useDashboard } from "@/context/DashboardContext";
 import { SECTORS } from "@/lib/mockData";
 
 const ProfilePanel: React.FC = () => {
   const {
     profileData,
+    setProfileData,
     profilePicData,
-    isProfileEditing,
-    tempProfileName,
-    setTempProfileName,
-    tempProfileOrg,
-    setTempProfileOrg,
-    tempProfileBio,
-    setTempProfileBio,
-    tempProfilePhone,
-    setTempProfilePhone,
-    tempProfileLinkedin,
-    setTempProfileLinkedin,
-    tempProfileTwitter,
-    setTempProfileTwitter,
-    tempProfileWebsite,
-    setTempProfileWebsite,
-    tempFocusSectors,
-    currentPassword,
-    setCurrentPassword,
-    newPassword,
-    setNewPassword,
-    confirmPassword,
-    setConfirmPassword,
+    setProfilePicData,
     allPitches,
     shortlistedIds,
-    startEditingProfile,
-    cancelEditingProfile,
-    saveProfileData,
-    toggleTempFocusSector,
-    handleProfilePicUpload,
-    handlePasswordSubmit,
+    showToast,
     getInitials
   } = useDashboard();
+
+  // Local editing states
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [tempProfileName, setTempProfileName] = useState("");
+  const [tempProfileOrg, setTempProfileOrg] = useState("");
+  const [tempProfileBio, setTempProfileBio] = useState("");
+  const [tempProfilePhone, setTempProfilePhone] = useState("");
+  const [tempProfileLinkedin, setTempProfileLinkedin] = useState("");
+  const [tempProfileTwitter, setTempProfileTwitter] = useState("");
+  const [tempProfileWebsite, setTempProfileWebsite] = useState("");
+  const [tempFocusSectors, setTempFocusSectors] = useState<string[]>([]);
+
+  // Password editing states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const totalPitchesCount = allPitches.length;
   const shortlistedPitchesCount = shortlistedIds.length;
 
+  const startEditingProfile = () => {
+    setTempProfileName(profileData.name);
+    setTempProfileOrg(profileData.org);
+    setTempProfileBio(profileData.bio);
+    setTempProfilePhone(profileData.phone);
+    setTempProfileLinkedin(profileData.linkedin);
+    setTempProfileTwitter(profileData.twitter);
+    setTempProfileWebsite(profileData.website);
+    setTempFocusSectors([...profileData.focusSectors]);
+    setIsProfileEditing(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setIsProfileEditing(false);
+  };
+
+  const saveProfileData = () => {
+    const updatedProfile = {
+      name: tempProfileName.trim() || profileData.name,
+      org: tempProfileOrg.trim() || profileData.org,
+      bio: tempProfileBio.trim(),
+      phone: tempProfilePhone.trim(),
+      email: profileData.email,
+      linkedin: tempProfileLinkedin.trim(),
+      twitter: tempProfileTwitter.trim(),
+      website: tempProfileWebsite.trim(),
+      focusSectors: tempFocusSectors
+    };
+    setProfileData(updatedProfile);
+    localStorage.setItem("stepup_profile_data", JSON.stringify(updatedProfile));
+    setIsProfileEditing(false);
+    showToast("Profile updated successfully!");
+  };
+
+  const toggleTempFocusSector = (sector: string) => {
+    if (tempFocusSectors.includes(sector)) {
+      setTempFocusSectors(tempFocusSectors.filter((s) => s !== sector));
+    } else {
+      setTempFocusSectors([...tempFocusSectors, sector]);
+    }
+  };
+
+  const handleProfilePicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setProfilePicData(dataUrl);
+        localStorage.setItem("stepup_profile_pic", dataUrl);
+        showToast("Profile picture uploaded successfully!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast("Passwords do not match!", "error");
+      return;
+    }
+    showToast("Password updated successfully!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  };
+
   return (
-    <section id="panel-profile" className="dashboard-panel active">
+    <section id="panel-profile" className="dashboard-panel active" style={{ animation: "fadeIn 0.4s ease" }}>
       <div className="profile-layout">
         {/* Left Column: Profile Card & Bio */}
         <div className="profile-main-col">

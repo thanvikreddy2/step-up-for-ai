@@ -1,9 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { Startup, ProfileData, Toast, ActiveTab, ModalMode, MetricKey } from "@/types";
+import { Startup, ProfileData, Toast, ActiveTab, MetricKey } from "@/types";
 import { STARTUP_DATA } from "@/lib/mockData";
-import { getPitchDeckDetails } from "@/lib/pitchDeckData";
 
 interface DashboardContextType {
   isMounted: boolean;
@@ -34,47 +33,13 @@ interface DashboardContextType {
   ratingFilter: number;
   setRatingFilter: (rating: number) => void;
 
-  // Profile
+  // Profile data
   profileData: ProfileData;
   setProfileData: React.Dispatch<React.SetStateAction<ProfileData>>;
   profilePicData: string | null;
   setProfilePicData: React.Dispatch<React.SetStateAction<string | null>>;
-  isProfileEditing: boolean;
-  setIsProfileEditing: React.Dispatch<React.SetStateAction<boolean>>;
-  
-  // Profile edit forms
-  tempProfileName: string;
-  setTempProfileName: (val: string) => void;
-  tempProfileOrg: string;
-  setTempProfileOrg: (val: string) => void;
-  tempProfileBio: string;
-  setTempProfileBio: (val: string) => void;
-  tempProfilePhone: string;
-  setTempProfilePhone: (val: string) => void;
-  tempProfileLinkedin: string;
-  setTempProfileLinkedin: (val: string) => void;
-  tempProfileTwitter: string;
-  setTempProfileTwitter: (val: string) => void;
-  tempProfileWebsite: string;
-  setTempProfileWebsite: (val: string) => void;
-  tempFocusSectors: string[];
-  setTempFocusSectors: React.Dispatch<React.SetStateAction<string[]>>;
 
-  // Password editing forms
-  currentPassword: string;
-  setCurrentPassword: (val: string) => void;
-  newPassword: string;
-  setNewPassword: (val: string) => void;
-  confirmPassword: string;
-  setConfirmPassword: (val: string) => void;
-
-  // Support message form
-  supportSubject: string;
-  setSupportSubject: (val: string) => void;
-  supportMessage: string;
-  setSupportMessage: (val: string) => void;
-
-  // Selected startup & tabs inside split-pane
+  // Selected startup in details view
   selectedStartup: Startup | null;
   setSelectedStartup: (startup: Startup | null) => void;
   isDeckToggled: boolean;
@@ -82,7 +47,7 @@ interface DashboardContextType {
   currentSlide: number;
   setCurrentSlide: React.Dispatch<React.SetStateAction<number>>;
 
-  // Deal Room tabs
+  // Deal Room Tabs State
   activeTab: ActiveTab;
   setActiveTab: React.Dispatch<React.SetStateAction<ActiveTab>>;
   startupRatings: Record<string, { pedigree: number; tailwinds: number; moat: number }>;
@@ -98,13 +63,6 @@ interface DashboardContextType {
   updateRating: (startupId: string, metric: MetricKey, value: number) => void;
   clearAllFilters: () => void;
   getFilteredPitches: (forcedShortlisted?: boolean) => Startup[];
-  startEditingProfile: () => void;
-  cancelEditingProfile: () => void;
-  saveProfileData: () => void;
-  toggleTempFocusSector: (sector: string) => void;
-  handleProfilePicUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handlePasswordSubmit: (e: React.FormEvent) => void;
-  handleSupportMessageSubmit: (e: React.FormEvent) => void;
   getInitials: (name: string) => string;
   isNewThisWeek: (dateString: string) => boolean;
   formatAskAmount: (amount: number) => string;
@@ -143,26 +101,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     focusSectors: ["ai-ml", "climate", "saas"]
   });
   const [profilePicData, setProfilePicData] = useState<string | null>(null);
-  const [isProfileEditing, setIsProfileEditing] = useState(false);
-
-  // Form states
-  const [tempProfileName, setTempProfileName] = useState("");
-  const [tempProfileOrg, setTempProfileOrg] = useState("");
-  const [tempProfileBio, setTempProfileBio] = useState("");
-  const [tempProfilePhone, setTempProfilePhone] = useState("");
-  const [tempProfileLinkedin, setTempProfileLinkedin] = useState("");
-  const [tempProfileTwitter, setTempProfileTwitter] = useState("");
-  const [tempProfileWebsite, setTempProfileWebsite] = useState("");
-  const [tempFocusSectors, setTempFocusSectors] = useState<string[]>([]);
-
-  // Password setting state
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  // Support message state
-  const [supportSubject, setSupportSubject] = useState("");
-  const [supportMessage, setSupportMessage] = useState("");
 
   // Selected startup in details view
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
@@ -376,7 +314,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const currentFiltered = getFilteredPitches(activePanel === "shortlisted-ideas");
   useEffect(() => {
     if (currentFiltered.length > 0) {
-      // If currently selected is not in filtered, reset to first filtered
       if (!selectedStartup || !currentFiltered.some(s => s.id === selectedStartup.id)) {
         setSelectedStartup(currentFiltered[0]);
         setCurrentSlide(0);
@@ -386,85 +323,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setSelectedStartup(null);
     }
   }, [searchQuery, sectorFilter, stageFilter, shortlistFilter, sortOrder, locationFilter, companyFilter, ratingFilter, activePanel, shortlistedIds]);
-
-  // Profile Edit Actions
-  const startEditingProfile = () => {
-    setTempProfileName(profileData.name);
-    setTempProfileOrg(profileData.org);
-    setTempProfileBio(profileData.bio);
-    setTempProfilePhone(profileData.phone);
-    setTempProfileLinkedin(profileData.linkedin);
-    setTempProfileTwitter(profileData.twitter);
-    setTempProfileWebsite(profileData.website);
-    setTempFocusSectors([...profileData.focusSectors]);
-    setIsProfileEditing(true);
-  };
-
-  const cancelEditingProfile = () => {
-    setIsProfileEditing(false);
-  };
-
-  const saveProfileData = () => {
-    const updatedProfile: ProfileData = {
-      name: tempProfileName.trim() || profileData.name,
-      org: tempProfileOrg.trim() || profileData.org,
-      bio: tempProfileBio.trim(),
-      phone: tempProfilePhone.trim(),
-      email: profileData.email,
-      linkedin: tempProfileLinkedin.trim(),
-      twitter: tempProfileTwitter.trim(),
-      website: tempProfileWebsite.trim(),
-      focusSectors: tempFocusSectors
-    };
-    setProfileData(updatedProfile);
-    localStorage.setItem("stepup_profile_data", JSON.stringify(updatedProfile));
-    setIsProfileEditing(false);
-    showToast("Profile updated successfully!");
-  };
-
-  const toggleTempFocusSector = (sector: string) => {
-    if (tempFocusSectors.includes(sector)) {
-      setTempFocusSectors(tempFocusSectors.filter(s => s !== sector));
-    } else {
-      setTempFocusSectors([...tempFocusSectors, sector]);
-    }
-  };
-
-  const handleProfilePicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        setProfilePicData(dataUrl);
-        localStorage.setItem("stepup_profile_pic", dataUrl);
-        showToast("Profile picture uploaded successfully!");
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      showToast("Passwords do not match!", "error");
-      return;
-    }
-    showToast("Password updated successfully!");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  };
-
-  const handleSupportMessageSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = `Hello StepUp Team,\n\nName: ${profileData.name}\nSubject: ${supportSubject}\nMessage: ${supportMessage}`;
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=918341011206&text=${encodeURIComponent(text)}`;
-    showToast("Opening WhatsApp...");
-    window.open(whatsappUrl, "_blank");
-    setSupportSubject("");
-    setSupportMessage("");
-  };
 
   return (
     <DashboardContext.Provider
@@ -498,34 +356,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setProfileData,
         profilePicData,
         setProfilePicData,
-        isProfileEditing,
-        setIsProfileEditing,
-        tempProfileName,
-        setTempProfileName,
-        tempProfileOrg,
-        setTempProfileOrg,
-        tempProfileBio,
-        setTempProfileBio,
-        tempProfilePhone,
-        setTempProfilePhone,
-        tempProfileLinkedin,
-        setTempProfileLinkedin,
-        tempProfileTwitter,
-        setTempProfileTwitter,
-        tempProfileWebsite,
-        setTempProfileWebsite,
-        tempFocusSectors,
-        setTempFocusSectors,
-        currentPassword,
-        setCurrentPassword,
-        newPassword,
-        setNewPassword,
-        confirmPassword,
-        setConfirmPassword,
-        supportSubject,
-        setSupportSubject,
-        supportMessage,
-        setSupportMessage,
         selectedStartup,
         setSelectedStartup,
         isDeckToggled,
@@ -543,13 +373,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateRating,
         clearAllFilters,
         getFilteredPitches,
-        startEditingProfile,
-        cancelEditingProfile,
-        saveProfileData,
-        toggleTempFocusSector,
-        handleProfilePicUpload,
-        handlePasswordSubmit,
-        handleSupportMessageSubmit,
         getInitials,
         isNewThisWeek,
         formatAskAmount,
