@@ -191,3 +191,15 @@ export const SECTORS = [
   { value: "ai-ml", label: "AI / ML" },
   { value: "saas", label: "SaaS" }
 ];
+
+export const DEFAULT_PROFILE_DATA = {
+  name: "Thanvik Reddy",
+  org: "Thanvik Ventures",
+  bio: "Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Supporting visionary founders from Seed to Series A.",
+  phone: "+91 83410 11206",
+  email: "thanvikreddy2@gmail.com",
+  linkedin: "https://linkedin.com/in/thanvik-reddy",
+  twitter: "https://x.com/thanvik_reddy",
+  website: "https://thanvikventures.com",
+  focusSectors: ["ai-ml", "climate", "saas"]
+};

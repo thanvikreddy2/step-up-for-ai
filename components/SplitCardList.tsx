@@ -3,6 +3,7 @@
 import React from "react";
 import { Startup } from "@/types";
 import { useDashboard } from "@/context/DashboardContext";
+import { formatAskAmount } from "@/lib/utils";
 
 interface SplitCardListProps {
   filteredPitches: Startup[];
@@ -14,8 +15,7 @@ const SplitCardList: React.FC<SplitCardListProps> = ({ filteredPitches }) => {
     setSelectedStartup,
     shortlistedIds,
     toggleShortlist,
-    clearAllFilters,
-    formatAskAmount
+    clearAllFilters
   } = useDashboard();
 
   return (

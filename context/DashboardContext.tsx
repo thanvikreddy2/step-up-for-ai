@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Startup, ProfileData, Toast, ActiveTab, MetricKey } from "@/types";
-import { STARTUP_DATA } from "@/lib/mockData";
+import { STARTUP_DATA, DEFAULT_PROFILE_DATA } from "@/lib/mockData";
+import { filterPitches, PitchFilters } from "@/lib/filterUtils";
 
 interface DashboardContextType {
   isMounted: boolean;
@@ -63,10 +64,6 @@ interface DashboardContextType {
   updateRating: (startupId: string, metric: MetricKey, value: number) => void;
   clearAllFilters: () => void;
   getFilteredPitches: (forcedShortlisted?: boolean) => Startup[];
-  getInitials: (name: string) => string;
-  isNewThisWeek: (dateString: string) => boolean;
-  formatAskAmount: (amount: number) => string;
-  formatLakhs: (amount: number) => string;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -89,17 +86,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [ratingFilter, setRatingFilter] = useState(0);
 
   // Profile State
-  const [profileData, setProfileData] = useState<ProfileData>({
-    name: "Thanvik Reddy",
-    org: "Thanvik Ventures",
-    bio: "Focused on early-stage investments in artificial intelligence, climate technology, and SaaS solutions. Supporting visionary founders from Seed to Series A.",
-    phone: "+91 83410 11206",
-    email: "thanvikreddy2@gmail.com",
-    linkedin: "https://linkedin.com/in/thanvik-reddy",
-    twitter: "https://x.com/thanvik_reddy",
-    website: "https://thanvikventures.com",
-    focusSectors: ["ai-ml", "climate", "saas"]
-  });
+  const [profileData, setProfileData] = useState<ProfileData>(DEFAULT_PROFILE_DATA);
   const [profilePicData, setProfilePicData] = useState<string | null>(null);
 
   // Selected startup in details view
@@ -115,38 +102,6 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
   const [startupRatings, setStartupRatings] = useState<Record<string, { pedigree: number; tailwinds: number; moat: number }>>({});
   const [startupNotes, setStartupNotes] = useState<Record<string, string>>({});
-
-  // Helpers
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map(word => word[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  const isNewThisWeek = (dateString: string) => {
-    const submitted = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - submitted.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7;
-  };
-
-  const formatAskAmount = (amount: number) => {
-    if (amount >= 10000000) {
-      return `₹${(amount / 10000000).toFixed(1).replace(/\.0$/, "")} Cr`;
-    }
-    if (amount >= 100000) {
-      return `₹${(amount / 100000).toFixed(1).replace(/\.0$/, "")} L`;
-    }
-    return `₹${amount.toLocaleString("en-IN")}`;
-  };
-
-  const formatLakhs = (amount: number) => {
-    return formatAskAmount(amount);
-  };
 
   const showToast = (message: string, type: "success" | "info" | "error" = "success") => {
     const id = nextToastId.current++;
@@ -240,74 +195,17 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const getFilteredPitches = (forcedShortlisted = false) => {
-    let result = [...allPitches];
-
-    // Forced shortlisted mode (when on shortlisted ideas panel)
-    if (forcedShortlisted) {
-      result = result.filter(s => shortlistedIds.includes(s.id));
-    }
-
-    // Search query filter
-    if (searchQuery.trim() !== "") {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        s =>
-          s.name.toLowerCase().includes(query) ||
-          s.tagline.toLowerCase().includes(query) ||
-          s.founder.toLowerCase().includes(query) ||
-          s.description.toLowerCase().includes(query)
-      );
-    }
-
-    // Company filter
-    if (companyFilter !== "all") {
-      result = result.filter(s => s.id === companyFilter);
-    }
-
-    // Location filter
-    if (locationFilter !== "all") {
-      result = result.filter(s => s.location && s.location.toLowerCase().includes(locationFilter.toLowerCase()));
-    }
-
-    // Sector/Industry filter
-    if (sectorFilter !== "all") {
-      result = result.filter(s => s.sector === sectorFilter);
-    }
-
-    // Stage filter
-    if (stageFilter !== "all") {
-      result = result.filter(s => s.stage === stageFilter);
-    }
-
-    // Shortlisted filter
-    if (!forcedShortlisted && shortlistFilter === "shortlisted") {
-      result = result.filter(s => shortlistedIds.includes(s.id));
-    }
-
-    // Rating Filter
-    if (ratingFilter > 0) {
-      result = result.filter(s => {
-        const rating = startupRatings[s.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 };
-        const average = (rating.pedigree + rating.tailwinds + rating.moat) / 3;
-        return average >= ratingFilter;
-      });
-    }
-
-    // Sorting
-    result.sort((a, b) => {
-      if (sortOrder === "newest") {
-        return new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime();
-      } else if (sortOrder === "oldest") {
-        return new Date(a.submittedDate).getTime() - new Date(b.submittedDate).getTime();
-      } else if (sortOrder === "highest-ask") {
-        return b.ask - a.ask;
-      } else if (sortOrder === "lowest-ask") {
-        return a.ask - b.ask;
-      }
-      return 0;
-    });
-
-    return result;
+    const filters: PitchFilters = {
+      searchQuery,
+      companyFilter,
+      locationFilter,
+      sectorFilter,
+      stageFilter,
+      shortlistFilter,
+      sortOrder,
+      ratingFilter
+    };
+    return filterPitches(allPitches, filters, shortlistedIds, startupRatings, forcedShortlisted);
   };
 
   // Sync selectedStartup when filtered pitches list changes
@@ -372,11 +270,7 @@ export const DashboardProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         updateNotes,
         updateRating,
         clearAllFilters,
-        getFilteredPitches,
-        getInitials,
-        isNewThisWeek,
-        formatAskAmount,
-        formatLakhs
+        getFilteredPitches
       }}
     >
       {children}

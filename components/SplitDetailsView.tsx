@@ -4,7 +4,12 @@ import React from "react";
 import { useDashboard } from "@/context/DashboardContext";
 import { getPitchDeckDetails } from "@/lib/pitchDeckData";
 import { downloadPitchDeckPDF } from "@/lib/pdfGenerator";
+import { formatAskAmount, formatLakhs } from "@/lib/utils";
 import InlineSlideshow from "./InlineSlideshow";
+import OverviewTab from "./OverviewTab";
+import DataRoomTab from "./DataRoomTab";
+import CapTableTab from "./CapTableTab";
+import NotesTab from "./NotesTab";
 
 const SplitDetailsView: React.FC = () => {
   const {
@@ -21,9 +26,7 @@ const SplitDetailsView: React.FC = () => {
     startupNotes,
     updateRating,
     updateNotes,
-    showToast,
-    formatAskAmount,
-    formatLakhs
+    showToast
   } = useDashboard();
 
   if (!selectedStartup) {
@@ -53,10 +56,6 @@ const SplitDetailsView: React.FC = () => {
 
   const isShortlisted = shortlistedIds.includes(selectedStartup.id);
   const deck = getPitchDeckDetails(selectedStartup);
-
-  const currentStartupRating = startupRatings[selectedStartup.id] || { pedigree: 4.0, tailwinds: 4.2, moat: 4.5 };
-  const currentAverageRating =
-    (currentStartupRating.pedigree + currentStartupRating.tailwinds + currentStartupRating.moat) / 3;
 
   const handlePDF = () => {
     downloadPitchDeckPDF(selectedStartup, deck, showToast);
@@ -144,7 +143,7 @@ const SplitDetailsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Presentation slide deck inline or Normal detailed view */}
+        {/* Inline presentation or normal tabbed view */}
         {isDeckToggled ? (
           <InlineSlideshow
             startup={selectedStartup}
@@ -186,7 +185,7 @@ const SplitDetailsView: React.FC = () => {
               </div>
             </div>
 
-            {/* Horizontal Tabs */}
+            {/* Tab selection row */}
             <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px", padding: "2px", border: "1px solid rgba(255, 255, 255, 0.06)", justifyContent: "space-between" }}>
               {[
                 { id: "overview", label: "Overview" },
@@ -215,173 +214,31 @@ const SplitDetailsView: React.FC = () => {
               ))}
             </div>
 
-            {/* Render Tab Contents */}
+            {/* Tab content boxes */}
             <div style={{ minHeight: "180px" }}>
-              {/* OVERVIEW TAB */}
               {activeTab === "overview" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", background: "rgba(255, 255, 255, 0.01)", border: "1px solid rgba(255, 255, 255, 0.05)", borderRadius: "10px", padding: "12px" }}>
-                    <div>
-                      <span style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "2px" }}>Funding Ask</span>
-                      <strong style={{ fontSize: "1.1rem", color: "#10b981" }}>{formatAskAmount(selectedStartup.ask)}</strong>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "rgba(255,255,255,0.4)", display: "block", marginBottom: "2px" }}>Submitted Date</span>
-                      <strong style={{ fontSize: "1.1rem", color: "#ffffff" }}>{selectedStartup.submittedDate}</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "15px", alignItems: "center" }}>
-                    <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", padding: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ position: "relative", width: "46px", height: "46px" }}>
-                        <svg width="46" height="46" viewBox="0 0 56 56">
-                          <defs>
-                            <linearGradient id="emeraldTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor="#10b981" />
-                              <stop offset="100%" stopColor="#059669" />
-                            </linearGradient>
-                          </defs>
-                          <circle cx="28" cy="28" r="23" fill="transparent" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="5" />
-                          <circle cx="28" cy="28" r="23" fill="transparent" stroke="url(#emeraldTealGrad)" strokeWidth="5"
-                                  strokeDasharray="144.5" strokeDashoffset={144.5 * (1 - 0.6)} strokeLinecap="round" transform="rotate(-90 28 28)" />
-                        </svg>
-                        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", fontSize: "0.7rem", fontWeight: 700, color: "#ffffff" }}>60%</div>
-                      </div>
-                      <div style={{ fontSize: "0.75rem", lineHeight: 1.3 }}>
-                        <div style={{ color: "#ffffff", fontWeight: 600 }}>{formatLakhs(selectedStartup.ask * 0.6)} Vetted</div>
-                        <div style={{ color: "rgba(255,255,255,0.4)" }}>{formatLakhs(selectedStartup.ask * 0.4)} Left</div>
-                      </div>
-                    </div>
-
-                    <div style={{ background: "rgba(16, 185, 129, 0.04)", border: "1px solid rgba(16, 185, 129, 0.2)", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
-                      <span style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "#10b981", display: "block", marginBottom: "2px", fontWeight: 600 }}>Conviction Score</span>
-                      <strong style={{ fontSize: "1.1rem", color: "#ffffff" }}>{currentAverageRating.toFixed(1)} / 5.0</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {[
-                      { key: "pedigree", label: "Founder Pedigree" },
-                      { key: "tailwinds", label: "Market Tailwinds" },
-                      { key: "moat", label: "Product Moat" }
-                    ].map((m) => {
-                      const val = (currentStartupRating as any)[m.key];
-                      return (
-                        <div key={m.key} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
-                            <span style={{ color: "rgba(255,255,255,0.6)" }}>{m.label}</span>
-                            <span style={{ color: "#10b981", fontWeight: 700 }}>{val.toFixed(1)} / 5.0</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="1"
-                            max="5"
-                            step="0.1"
-                            value={val}
-                            onChange={(e) => updateRating(selectedStartup.id, m.key as any, parseFloat(e.target.value))}
-                            className="scorecard-slider"
-                            style={{ width: "100%", cursor: "pointer" }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <OverviewTab
+                  startup={selectedStartup}
+                  startupRatings={startupRatings}
+                  updateRating={updateRating}
+                />
               )}
 
-              {/* DATA ROOM TAB */}
               {activeTab === "dataroom" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {[
-                      { name: `${selectedStartup.name}_PitchDeck_v2.pdf`, size: "4.2 MB", type: "pdf" },
-                      { name: `${selectedStartup.name}_Financials.xlsx`, size: "1.8 MB", type: "excel" },
-                      { name: `${selectedStartup.name}_CapTable.xlsx`, size: "920 KB", type: "excel" }
-                    ].map((asset, idx) => (
-                      <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px", fontSize: "0.75rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                          {asset.type === "pdf" ? (
-                            <i className="fa-solid fa-file-pdf" style={{ color: "#ef4444", fontSize: "0.9rem" }}></i>
-                          ) : (
-                            <i className="fa-solid fa-file-excel" style={{ color: "#10b981", fontSize: "0.9rem" }}></i>
-                          )}
-                          <span style={{ color: "rgba(255,255,255,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={asset.name}>
-                            {asset.name}
-                          </span>
-                        </div>
-                        <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "0.7rem", flexShrink: 0 }}>{asset.size}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => showToast("Downloading all files as a ZIP archive...", "info")}
-                    className="btn btn-secondary"
-                    style={{ padding: "8px", fontSize: "0.75rem", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#ffffff" }}
-                  >
-                    <i className="fa-solid fa-file-archive" style={{ color: "#eab308" }}></i>
-                    <span>Download All Assets (.zip)</span>
-                  </button>
-                </div>
+                <DataRoomTab
+                  startup={selectedStartup}
+                  showToast={showToast}
+                />
               )}
 
-              {/* CAP TABLE TAB */}
-              {activeTab === "captable" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <div style={{ background: "rgba(255,255,255,0.01)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "8px", overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", textAlign: "left" }}>
-                      <thead>
-                        <tr style={{ background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                          <th style={{ padding: "6px 10px", color: "rgba(255,255,255,0.4)" }}>Shareholder</th>
-                          <th style={{ padding: "6px 10px", color: "rgba(255,255,255,0.4)", textAlign: "right" }}>Equity</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { role: "Founders & Team", pct: "65.0%" },
-                          { role: "Angel Investors", pct: "15.0%" },
-                          { role: "ESOP Option Pool", pct: "15.0%" },
-                          { role: "Syndicate Advisors", pct: "5.0%" }
-                        ].map((row, index) => (
-                          <tr key={index} style={{ borderBottom: index < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                            <td style={{ padding: "6px 10px", color: "rgba(255,255,255,0.7)" }}>{row.role}</td>
-                            <td style={{ padding: "6px 10px", color: "#10b981", fontWeight: 700, textAlign: "right" }}>{row.pct}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <span style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", lineHeight: 1.3 }}>
-                    * Dilution projection modeled post-current Seed round.
-                  </span>
-                </div>
-              )}
+              {activeTab === "captable" && <CapTableTab />}
 
-              {/* THESIS NOTES TAB */}
               {activeTab === "notes" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <textarea
-                    value={startupNotes[selectedStartup.id] || ""}
-                    onChange={(e) => updateNotes(selectedStartup.id, e.target.value)}
-                    placeholder="Write personal thesis notes, follow-up questions, or investment risks. Auto-saves locally..."
-                    style={{
-                      width: "100%",
-                      height: "120px",
-                      background: "rgba(255,255,255,0.01)",
-                      border: "1px solid rgba(255,255,255,0.08)",
-                      borderRadius: "8px",
-                      padding: "8px",
-                      color: "#ffffff",
-                      fontSize: "0.75rem",
-                      fontFamily: "inherit",
-                      resize: "none",
-                      outline: "none"
-                    }}
-                  />
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "0.65rem", color: "#10b981" }}>
-                    <i className="fa-solid fa-cloud-arrow-up"></i>
-                    <span>Saved in localStorage</span>
-                  </div>
-                </div>
+                <NotesTab
+                  startup={selectedStartup}
+                  startupNotes={startupNotes}
+                  updateNotes={updateNotes}
+                />
               )}
             </div>
           </>

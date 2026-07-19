@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useDashboard } from "@/context/DashboardContext";
+import { getInitials } from "@/lib/utils";
 
 const Sidebar: React.FC = () => {
   const {
@@ -10,8 +11,7 @@ const Sidebar: React.FC = () => {
     isSidebarOpen,
     setIsSidebarOpen,
     profileData,
-    profilePicData,
-    getInitials
+    profilePicData
   } = useDashboard();
 
   const menuItems = [
